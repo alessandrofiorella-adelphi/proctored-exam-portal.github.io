@@ -204,33 +204,3 @@ function processTabFiltering(userType, feedType) {
         container.appendChild(itemObj.element);
     });
 }
-
-// Paste this directly into your existing setupAccessibleTabs() function logic
-const visibleTabs = Array.from(document.querySelectorAll('.tab-btn')).filter(btn => !btn.classList.contains('hidden'));
-
-visibleTabs.forEach((tab, index) => {
-    // Standard mouse click tracking
-    tab.addEventListener('click', e => { activateTab(e.currentTarget); });
-
-    // Native keyboard arrow tracking
-    tab.addEventListener('keydown', e => {
-        let targetIndex = null;
-
-        if (e.key === 'ArrowRight') {
-            targetIndex = (index + 1) % visibleTabs.length;
-        } else if (e.key === 'ArrowLeft') {
-            targetIndex = (index - 1 + visibleTabs.length) % visibleTabs.length;
-        } else if (e.key === 'Home') {
-            targetIndex = 0;
-        } else if (e.key === 'End') {
-            targetIndex = visibleTabs.length - 1;
-        }
-
-        if (targetIndex !== null) {
-            e.preventDefault(); // Stop page from shifting position
-            const targetTab = visibleTabs[targetIndex];
-            targetTab.focus();  // Smoothly transfer active browser focus outline
-            activateTab(targetTab); // Switch the visible panel view layout
-        }
-    });
-});

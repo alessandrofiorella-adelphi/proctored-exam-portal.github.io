@@ -1,6 +1,2 @@
-# Database login credentials.
-[db_credentials]
-ssh_username='ALESSANDROFIORELLA'
-ssh_password='2026dbfun!'
-user='ALESSANDROFIORELLA'
-password=''
+#Database credentials.
+.streamlit/

@@ -103,104 +103,94 @@ function handleDateTypeToggle(userType, feedType) {
     processTabFiltering(userType, feedType);
 }
 
-function resetTabFilters(userType, feedType) {
-    let prefix = 'st';
-    if (userType === 'faculty') prefix = 'fa';
-    if (userType === 'proctorOpen') prefix = 'prOpen';
-    if (userType === 'proctorAgreed') prefix = 'prAgreed';
-
-    // Clear dates and dropdowns
-    const startInput = document.getElementById(`${prefix}Start`);
-    if (startInput) startInput.value = '';
-    
-    const endInput = document.getElementById(`${prefix}End`);
-    if (endInput) endInput.value = '';
-    
-    const sortInput = document.getElementById(`${prefix}Sort`);
-    if (sortInput) sortInput.value = 'desc';
-
-    // Reset radio buttons to 'submission'
-    const defaultRadio = document.querySelector(`input[name="${prefix}DateType"][value="submission"]`);
-    if (defaultRadio) defaultRadio.checked = true;
-
-    // Reset faculty course dropdown if it exists
-    const courseSelect = document.getElementById('faCourse');
-    if (courseSelect && userType === 'faculty') courseSelect.value = 'ALL';
-
-    // Run the filter engine to restore all items instantly
-    processTabFiltering(userType, feedType);
+function handleColumnDateTypeToggle(filterKey, feedType) {
+    processColumnFiltering(filterKey, feedType);
 }
 
 function processTabFiltering(userType, feedType) {
-    const container = document.getElementById(feedType);
-    if (!container) return;
+    applyFeedFiltering(feedType);
+}
 
-    // Grab all target child cards within this specific feed container
-    const items = Array.from(container.querySelectorAll('.exam-card'));
-    if (items.length === 0) return;
+function processColumnFiltering(filterKey, feedType) {
+    applyFeedFiltering(feedType);
+}
 
-    // 1. Map the parameter scope context prefixes cleanly
-    let prefix = 'st';
-    if (userType === 'faculty') prefix = 'fa';
-    if (userType === 'proctorOpen') prefix = 'prOpen';
-    if (userType === 'proctorAgreed') prefix = 'prAgreed';
+function clearFilters(feedType) {
+    const filterConfig = {
+        examFeed: { dateTypeName: 'stDateType', startId: 'stStart', endId: 'stEnd', sortId: 'stSort' },
+        facultyRequestsFeed: { dateTypeName: 'faDateType', startId: 'faStart', endId: 'faEnd', sortId: 'faSort', courseId: 'faCourse' },
+        openProctorFeed: { dateTypeName: 'openDateType', startId: 'openStart', endId: 'openEnd', sortId: 'openSort' },
+        agreedProctorFeed: { dateTypeName: 'agreedDateType', startId: 'agreedStart', endId: 'agreedEnd', sortId: 'agreedSort' }
+    };
 
-    // 2. Safely extract interactive input field values
-    const dateTypeInput = document.querySelector(`input[name="${prefix}DateType"]:checked`);
-    const dateType = dateTypeInput ? dateTypeInput.value : 'submission';
-    
-    const startDateElement = document.getElementById(`${prefix}Start`);
-    const endDateElement = document.getElementById(`${prefix}End`);
-    const sortElement = document.getElementById(`${prefix}Sort`);
+    const config = filterConfig[feedType];
+    if (!config) return;
 
-    const startDateVal = startDateElement ? startDateElement.value : '';
-    const endDateVal = endDateElement ? endDateElement.value : '';
-    const sortOrder = sortElement ? sortElement.value : 'desc';
+    const dateRadios = document.querySelectorAll(`input[name="${config.dateTypeName}"]`);
+    dateRadios.forEach(radio => {
+        if (radio.value === 'submission') radio.checked = true;
+    });
 
-    // Faculty drop-down filter parsing metric
-    const courseSelect = document.getElementById('faCourse');
-    const selectedCourse = courseSelect ? courseSelect.value : 'ALL';
+    document.getElementById(config.startId)?.value && (document.getElementById(config.startId).value = '');
+    document.getElementById(config.endId)?.value && (document.getElementById(config.endId).value = '');
+    const sortElement = document.getElementById(config.sortId);
+    if (sortElement) sortElement.value = 'desc';
+    if (config.courseId) document.getElementById(config.courseId)?.value = 'ALL';
 
-    // 3. Convert input strings to numeric timestamps (null if left blank)
-    const filterStart = startDateVal ? new Date(startDateVal + "T00:00:00").getTime() : null;
-    const filterEnd = endDateVal ? new Date(endDateVal + "T23:59:59").getTime() : null;
+    applyFeedFiltering(feedType);
+}
 
-    // 4. Map and evaluate each item's visibility status
-    const itemsWithDates = items.map(item => {
-        const rawSubDate = item.getAttribute('data-submission-date');
-        const rawExamDate = item.getAttribute('data-exam-date');
-        const itemCourse = item.getAttribute('data-course'); // Used by Faculty tab
+function applyFeedFiltering(feedType) {
+    const filterConfig = {
+        examFeed: { dateTypeName: 'stDateType', startId: 'stStart', endId: 'stEnd', sortId: 'stSort' },
+        facultyRequestsFeed: { dateTypeName: 'faDateType', startId: 'faStart', endId: 'faEnd', sortId: 'faSort', courseId: 'faCourse' },
+        openProctorFeed: { dateTypeName: 'openDateType', startId: 'openStart', endId: 'openEnd', sortId: 'openSort' },
+        agreedProctorFeed: { dateTypeName: 'agreedDateType', startId: 'agreedStart', endId: 'agreedEnd', sortId: 'agreedSort' }
+    };
 
-        const subTime = rawSubDate ? new Date(rawSubDate + "T00:00:00").getTime() : 0;
-        const examTime = rawExamDate ? new Date(rawExamDate + "T00:00:00").getTime() : 0;
-        
-        // Pick which date timeline to use based on the radio button choice
-        const activeTime = (dateType === 'submission') ? subTime : examTime;
+    const config = filterConfig[feedType];
+    if (!config) return;
 
-        let isVisible = true;
+    const feedContainer = document.getElementById(feedType);
+    if (!feedContainer) return;
 
-        // FIXED: Boundary conditions only trip if the user filled out that specific date input
-        if (filterStart && activeTime < filterStart) isVisible = false;
-        if (filterEnd && activeTime > filterEnd) isVisible = false;
+    const selectedDateType = document.querySelector(`input[name="${config.dateTypeName}"]:checked`)?.value || 'submission';
+    const dateAttribute = selectedDateType === 'exam' ? 'data-exam-date' : 'data-submission-date';
+    const startValue = document.getElementById(config.startId)?.value;
+    const endValue = document.getElementById(config.endId)?.value;
+    const sortDirection = document.getElementById(config.sortId)?.value || 'desc';
+    const selectedCourse = config.courseId ? document.getElementById(config.courseId)?.value : 'ALL';
 
-        // Faculty Course tracking evaluation check
-        if (selectedCourse !== 'ALL' && itemCourse && itemCourse !== selectedCourse) {
-            isVisible = false;
+    const fromTime = startValue ? new Date(`${startValue}T00:00:00`).getTime() : null;
+    const toTime = endValue ? new Date(`${endValue}T23:59:59`).getTime() : null;
+
+    const cards = Array.from(feedContainer.querySelectorAll('.exam-card'));
+    const visibleCards = cards.filter(card => {
+        if (selectedCourse && selectedCourse !== 'ALL' && config.courseId) {
+            const courseTag = card.dataset.course;
+            if (!courseTag || courseTag !== selectedCourse) {
+                return false;
+            }
         }
 
-        // Toggle card layout visibility without wiping out DOM element records
-        item.style.display = isVisible ? '' : 'none';
-        
-        return { element: item, time: activeTime };
+        const rawDate = card.getAttribute(dateAttribute);
+        if (!rawDate) {
+            return true;
+        }
+
+        const cardTime = new Date(`${rawDate}T00:00:00`).getTime();
+        if (fromTime !== null && cardTime < fromTime) return false;
+        if (toTime !== null && cardTime > toTime) return false;
+        return true;
     });
 
-    // 5. Run the mathematical layout sorting logic
-    itemsWithDates.sort((a, b) => {
-        return (sortOrder === 'desc') ? b.time - a.time : a.time - b.time;
+    cards.forEach(card => card.classList.toggle('hidden', !visibleCards.includes(card)));
+
+    visibleCards.sort((a, b) => {
+        const aValue = new Date(`${a.getAttribute(dateAttribute)}T00:00:00`).getTime() || 0;
+        const bValue = new Date(`${b.getAttribute(dateAttribute)}T00:00:00`).getTime() || 0;
+        return sortDirection === 'asc' ? aValue - bValue : bValue - aValue;
     });
 
-    // 6. Re-append nodes back into the DOM to instantly update screen sequence order
-    itemsWithDates.forEach(itemObj => {
-        container.appendChild(itemObj.element);
-    });
+    visibleCards.forEach(card => feedContainer.appendChild(card));
 }

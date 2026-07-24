@@ -88,7 +88,7 @@
                         </div>
 
                         <fieldset class="accessible-fieldset">
-                            <h5>Exam Accommodations</h2>
+                            <h5>Exam Accommodations</h5>
                             <p class="sub-description">Please only select the approved accommodations you would like to use on this exam.</p>    
                             <div class="checkbox-group">
                                 {% for option in approved_accomm_options %}
@@ -111,7 +111,6 @@
                 <div class="tab-column">
                     <h3>Previous Requests</h3>
                     
-                    <!-- Filter [NOT WORKING] -->
                     <details class="filter-dropdown-wrapper" id="stFilterDropdown">
                         <summary class="filter-dropdown-trigger">Filter & Sort</summary>
                         <div class="global-filter-bar">
@@ -142,9 +141,16 @@
                                     <option value="asc" id="stSortAscLabel">Oldest First</option>
                                 </select>
                             </div>
-                    <div class="filter-row toggle-row">
-                        <button type="button" class="filter-clear-btn" onclick="clearFilters('examFeed')">Clear Filters</button>
-                    </div>
+                            <div class="filter-row toggle-row">
+                                <button type="button" class="filter-clear-btn" onclick="clearFilters('examFeed')">Clear Filters</button>
+                            </div>
+                        </div>
+                    </details>
+
+                    <div class="exam-feed-scroll" id="examFeed">
+                        {% for exam in student_exams %}
+                        <div class="exam-card status-{{ exam.statusID|lower|replace(' ', '-') }}" data-submission-date="{{ exam.sub_date }}" data-exam-date="{{ exam.pref_date }}">
+                            <div class="exam-card-header">
                                 <h4>{{ exam.studentFirstName }} {{ exam.studentLastName }}</h4>
                                 <span class="badge badge-{{ exam.statusID|lower|replace(' ', '-') }}">{{ exam.statusID }}</span>
                             </div>
@@ -212,9 +218,15 @@
                                 <option value="asc" id="faSortAscLabel">Oldest First</option>
                             </select>
                         </div>
-                    <div class="filter-row toggle-row">
-                        <button type="button" class="filter-clear-btn" onclick="clearFilters('facultyRequestsFeed')">Clear Filters</button>
+                        <div class="filter-row toggle-row">
+                            <button type="button" class="filter-clear-btn" onclick="clearFilters('facultyRequestsFeed')">Clear Filters</button>
+                        </div>
                     </div>
+                </details>
+
+            <div class="faculty-requests-container" id="facultyRequestsFeed">
+                {% for exam in faculty_exams %}
+                <div class="exam-card faculty-card status-{{ exam.statusID|lower|replace(' ', '-') }}" data-course="{{ exam.idExamCourse }}" data-submission-date="{{ exam.sub_date }}" data-exam-date="{{ exam.pref_date }}">
                     <form action="/faculty/update-request" method="POST">
                         <input type="hidden" name="request_id" value="{{ exam.idExamRequest }}">
                         
@@ -305,9 +317,6 @@
                         </div>
                     </details>
                     <div class="proctor-feed-scroll" id="openProctorFeed">
-                <div class="tab-column proctor-column">
-                    <h3>Open Requests</h3>
-                    <div class="proctor-feed-scroll" id="openProctorFeed">
                         {% for exam in proctor_exams if exam.statusID == 'Approved By Faculty (Initial)' %}
                         <div class="exam-card status-{{ exam.statusID|lower|replace(' ', '-') }}" data-submission-date="{{ exam.sub_date }}" data-exam-date="{{ exam.pref_date }}">
                             <form action="/proctor/claim-request" method="POST">
@@ -362,14 +371,13 @@
                         
                         <!-- Confirms that the exam is being proctored by the current user -->
                         {% for exam in proctor_exams if exam.statusID in ['Approved By Proctor', 'Approved By Faculty (Final)'] and exam.assignedProctorID == current_user_id %}
-                        <div class="exam-card status-{{ 'approved' if exam.statusID == 'Approved By Faculty (Final)' else 'proctor-found' }}" data-submission-date="{{ exam.sub_date }}" data-exam-date="{{ exam.pref_date }}">
+                        {% if exam.statusID == 'Approved By Faculty (Final)' %}
+                        <div class="exam-card status-approved" data-submission-date="{{ exam.sub_date }}" data-exam-date="{{ exam.pref_date }}">
                             <form action="/proctor/drop-request" method="POST">
                                 <input type="hidden" name="request_id" value="{{ exam.idExamRequest }}">
                                 <div class="exam-card-header">
                                     <h4>Course: {{ exam.idExamCourse }}</h4>
-                                    <span class="badge badge-{{ 'approved' if exam.statusID == 'Approved By Faculty (Final)' else 'proctor-found' }}">
-                                        {{ 'Confirmed' if exam.statusID == 'Approved By Instructor' else 'Awaiting Instructor Confirmation' }}
-                                    </span>
+                                    <span class="badge badge-approved">Confirmed</span>
                                 </div>
                                 <div class="exam-card-body">
                                     <p><strong>Student:</strong> {{ exam.studentFirstName }} {{ exam.studentLastName }}</p>
@@ -383,6 +391,27 @@
                                 </div>
                             </form>
                         </div>
+                        {% else %}
+                        <div class="exam-card status-proctor-found" data-submission-date="{{ exam.sub_date }}" data-exam-date="{{ exam.pref_date }}">
+                            <form action="/proctor/drop-request" method="POST">
+                                <input type="hidden" name="request_id" value="{{ exam.idExamRequest }}">
+                                <div class="exam-card-header">
+                                    <h4>Course: {{ exam.idExamCourse }}</h4>
+                                    <span class="badge badge-proctor-found">Awaiting Instructor Confirmation</span>
+                                </div>
+                                <div class="exam-card-body">
+                                    <p><strong>Student:</strong> {{ exam.studentFirstName }} {{ exam.studentLastName }}</p>
+                                    <p><strong>Exam Date:</strong> {{ exam.actualDate }} @ {{ exam.actualTime }}</p>
+                                    <p><strong>Assigned Location:</strong> {{ exam.testingLocation }}</p>
+                                </div>
+                                <div class="proctor-card-actions">
+                                    <button type="submit" class="proctor-btn btn-drop" onclick="return confirm(' Are you sure you want to drop this exam?')">
+                                        Drop Exam
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                        {% endif %}
                         {% else %}
                         <p class="sub-description">No exams agreed to proctor.</p>
                         {% endfor %}

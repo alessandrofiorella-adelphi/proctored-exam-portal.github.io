@@ -3,3 +3,4 @@ streamlit
 Flask
 sshtunnel
 mysql-connector-python
+gunicorn

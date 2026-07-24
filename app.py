@@ -10,9 +10,6 @@ from flask import Flask, render_template, request, redirect, url_for, session, j
 from sshtunnel import SSHTunnelForwarder
 import mysql.connector
 
-# Streamlit is used to host this project on the web.
-import streamlit as st
-
 # Points to your custom asset directories and templates folder location
 app = Flask(__name__, static_url_path='', static_folder='.', template_folder='pages')
 app.secret_key = 'adelphi_secure_session_token_key'
@@ -21,16 +18,16 @@ def get_db_connection():
     """Opens a secure SSH tunnel bridge and returns an active MySQL connection."""
     tunnel = SSHTunnelForwarder(
         ('compsci.adelphi.edu', 22),
-        ssh_username=st.secrets.db_credentials.ssh_username, 
-        ssh_password=st.secrets.db_credentials.ssh_password,
+        ssh_username=os.environ.get("ssh_username"), 
+        ssh_password=os.environ.get("ssh_password"),
         remote_bind_address=('127.0.0.1', 3306)
     )
     tunnel.start()
     return mysql.connector.connect(
         host='127.0.0.1',
         port=tunnel.local_bind_port,
-        user=st.secrets.db_credentials.user,
-        password=st.secrets.db_credentials.password,
+        user=os.environ.get("user"),
+        password=os.environ.get("password"),
         database='ALESSANDROFIORELLA',
         autocommit=True
     )
@@ -372,4 +369,7 @@ def proctor_drop_request():
         return f"Proctor Resignation Processing Failure: {str(e)}", 500
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    # This is required for Render.
+    import os
+    port = int(os.environ.get("PORT", 5000))
+    app.run(host="0.0.0.0", port=port, debug=True)

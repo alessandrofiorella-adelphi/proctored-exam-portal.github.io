@@ -1,10 +1,26 @@
+/* =========================================================================
+   GLOBAL RESET & FONTS (Page 1)
+   ========================================================================= */
 * {
     font-family: Arial, Helvetica, sans-serif;
+    box-sizing: border-box;
+}
+
+body {
+    background-color: #f1efed; /* Light Brown at 5% for an elegant warm backdrop */
+    color: #000000; /* Compliant Black text */
+    margin: 0;
+    padding: 20px;
+    display: flex;
+    flex-direction: column; /* Stacks header vertically above tabs container (Page 15) */
+    justify-content: flex-start; /* Aligns page content seamlessly from top (Page 16) */
+    align-items: center; 
+    padding-top: 30px;
 }
 
 .header-user-profile-badge {
     margin-top: 10px; 
-    font-size: 100%px; 
+    font-size: 100%; /* FIXED: Removed the invalid trailing 'px' suffix */
     font-weight: bold; 
     color: #4f2c1d; 
     background-color: #f1efed; 
@@ -14,23 +30,13 @@
     border-radius: 20px;
 }
 
-.body {
-    background-color: #f1efed; /* Light Brown at 5% for an elegant warm backdrop */
-    color: #000000;            /* Compliant Black text */
-    font-family: Arial, sans-serif;
-    margin: 0;
-    padding: 20px;
-    display: flex;
-    justify-content: center;   /* Perfectly centers layout horizontally */
-    align-items: center;       /* Centers layout vertically if needed */
-    box-sizing: border-box;
-    flex-direction: row;
-}
-
+/* =========================================================================
+   CORE APPARATUS WRAPPER LABELS (Page 2)
+   ========================================================================= */
 .tab-container {
-    max-width: 100vh;
+    max-width: 1100px; /* Optimized layout box width matching app-header */
     width: 90%;
-    margin: 0 auto;            /* Centers the container safely in line */
+    margin: 0 auto; /* Centers the container safely in line */
     background-color: #ffffff; /* Clean White content backing */
     border: 2px solid #4f2c1d; /* Adelphi Primary Brown border definition */
     border-radius: 8px;
@@ -39,18 +45,25 @@
 }
 
 h2, h3, .faculty-dashboard-header, .proctor-dashboard-header {
-    text-align: center;        /* Centers headings across all tabs */
-    color: #4f2c1d;            /* Primary Brown for clear typographic contrast */
+    text-align: center; /* Centers headings across all tabs */
+    color: #4f2c1d; /* Primary Brown for clear typographic contrast */
 }
 
 .column-desc {
     text-align: center;
-    color: #4f4942;            /* Dark Grey description subtext */
+    color: #4f4942; /* Dark Grey description subtext */
 }
 
-/* ==========================================================================
-   Navigation Tabs Bar (ARIA compliant)
-   ========================================================================== */
+/* =========================================================================
+   ACCESSIBLE, ROLE-BASED TABS - NO-JS SELECTION ENGINE (Page 3-4, 20-21)
+   ========================================================================= */
+/* Hide raw browser inputs visually while keeping fully interactive keyboard control */
+.tab-radio-state {
+    position: absolute;
+    opacity: 0;
+    pointer-events: none;
+}
+
 .tab-buttons {
     display: flex;
     background-color: #524940; /* Secondary Dark Brown background */
@@ -65,24 +78,36 @@ h2, h3, .faculty-dashboard-header, .proctor-dashboard-header {
     cursor: pointer;
     font-size: 140%;
     font-weight: bold;
-    color: #ffffff;            /* White text over dark brown */
+    text-align: center;
+    color: #ffffff; /* White text over dark brown */
     border-bottom: 4px solid transparent;
     transition: all 0.2s ease-in-out;
+    user-select: none;
 }
 
 .tab-btn:hover {
     background-color: #7a6855; /* Light Brown shift on mouse hover */
+    color: #ffffff;
 }
 
-/* WCAG Active Selection: High contrast Gold and Brown combinations */
-.tab-btn[aria-selected="true"] {
+/* WCAG Active Selection State: Triggers when linked input element is checked */
+#tab1-input:checked ~ .tab-buttons #btn-tab1,
+#tab2-input:checked ~ .tab-buttons #btn-tab2,
+#tab3-input:checked ~ .tab-buttons #btn-tab3 {
     background-color: #ffffff;
-    color: #4f2c1d;            /* Primary Brown text */
+    color: #4f2c1d; /* Primary Brown text */
     border-bottom: 4px solid #4f2c1d;
 }
 
-/* Strict Brand Focus Indication Outline */
-.tab-btn:focus,
+/* Strict Brand Keyboard Vision Tracking Outline Focus */
+#tab1-input:focus-visible ~ .tab-buttons #btn-tab1,
+#tab2-input:focus-visible ~ .tab-buttons #btn-tab2,
+#tab3-input:focus-visible ~ .tab-buttons #btn-tab3 {
+    outline: 3px solid #ffb500 !important; /* Gold focus glow for clear tracking */
+    outline-offset: -3px;
+}
+
+/* General component interactive focus rules */
 .form-group input:focus,
 .form-group select:focus,
 .checkbox-label input:focus,
@@ -90,14 +115,15 @@ h2, h3, .faculty-dashboard-header, .proctor-dashboard-header {
 .global-filter-bar select:focus,
 .form-submit-btn:focus,
 .faculty-save-btn:focus,
-.proctor-btn:focus {
-    outline: 3px solid #ffb500; /* Gold focus glow for clear vision tracking */
+.proctor-btn:focus,
+.btn-reset-filter:focus {
+    outline: 3px solid #ffb500;
     outline-offset: 2px;
 }
 
-/* ==========================================================================
-   Collapsible Accordion Filter Dropdowns 
-   ========================================================================== */
+/* =========================================================================
+   COLLAPSIBLE ACCORDION FILTER DROPDOWNS (Page 5-6)
+   ========================================================================= */
 .filter-dropdown-wrapper {
     background-color: #f1efed; /* Light Brown at 5% */
     border: 1px solid #7a6855; /* Light Brown accent divider border */
@@ -110,11 +136,11 @@ h2, h3, .faculty-dashboard-header, .proctor-dashboard-header {
     padding: 12px 16px;
     font-size: 14px;
     font-weight: bold;
-    color: #4f2c1d;            /* Primary Brown text */
+    color: #4f2c1d; /* Primary Brown text */
     cursor: pointer;
     background-color: #c5bbb1; /* Light Brown at 35% background track */
     user-select: none;
-    text-align: center;        /* Centers drop-down toggle titles */
+    text-align: center; /* Centers drop-down toggle titles */
 }
 
 .filter-dropdown-trigger:hover {
@@ -126,7 +152,7 @@ h2, h3, .faculty-dashboard-header, .proctor-dashboard-header {
     flex-wrap: wrap;
     gap: 15px;
     padding: 14px;
-    justify-content: center;   /* Centers filter option rows together inline */
+    justify-content: center; /* Centers filter option rows together inline */
     align-items: center;
     background-color: #f1efed;
 }
@@ -145,9 +171,28 @@ h2, h3, .faculty-dashboard-header, .proctor-dashboard-header {
     border-radius: 4px;
 }
 
-/* ==========================================================================
-   Form Components Layout Systems
-   ========================================================================== */
+/* ADDED: Clean layout adjustments for the custom Reset Filters buttons */
+.btn-reset-filter {
+    background-color: #f1efed;
+    color: #4f2c1d;
+    border: 1px solid #7a6855;
+    padding: 6px 14px;
+    font-size: 13px;
+    font-weight: bold;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.btn-reset-filter:hover {
+    background-color: #630015; /* Shifts to clear burgundy hover signal */
+    color: #ffffff;
+    border-color: #630015;
+}
+
+/* =========================================================================
+   FORM COMPONENTS LAYOUT SYSTEMS (Page 7-8)
+   ========================================================================= */
 .form-group {
     display: flex;
     flex-direction: column;
@@ -199,14 +244,13 @@ h2, h3, .faculty-dashboard-header, .proctor-dashboard-header {
     font-style: italic;
 }
 
-
-/* ==========================================================================
-   Themed Action Control Button Links
-   ========================================================================== */
+/* =========================================================================
+   THEMED ACTION CONTROL BUTTON LINKS (Page 9-10)
+   ========================================================================= */
 /* Primary Processing Action: High contrast Gold on Black setup */
 .form-submit-btn, .btn-action-approve, .btn-claim {
     background-color: #ffb500; /* Gold */
-    color: #000000;            /* Black text yield crisp 11.86:1 contrast ratio */
+    color: #000000; /* Black text yields crisp 11.86:1 contrast ratio */
     border: 1px solid #4f2c1d;
     padding: 14px;
     font-size: 16px;
@@ -219,13 +263,13 @@ h2, h3, .faculty-dashboard-header, .proctor-dashboard-header {
 
 .form-submit-btn:hover, .btn-action-approve:hover, .btn-claim:hover {
     background-color: #4f2c1d; /* Shifts clean to primary brown background */
-    color: #ffffff;            /* Shifts to safe white text (12.27:1 contrast) */
+    color: #ffffff; /* Shifts to safe white text (12.27:1 contrast) */
 }
 
 /* Secondary Management Button Links */
 .faculty-save-btn, .btn-action-proctor {
     background-color: #4f2c1d; /* Primary Brown */
-    color: #ffffff;            /* White text */
+    color: #ffffff; /* White text */
     border: none;
     padding: 10px 16px;
     font-size: 14px;
@@ -250,9 +294,9 @@ h2, h3, .faculty-dashboard-header, .proctor-dashboard-header {
     color: #ffffff;
 }
 
-/* ==========================================================================
-   Exam Tracking Cards Feed Architecture
-   ========================================================================== */
+/* =========================================================================
+   EXAM TRACKING CARDS FEED ARCHITECTURE (Page 11-12)
+   ========================================================================= */
 .exam-card {
     background-color: #ffffff;
     border: 1px solid #7a6855;
@@ -264,10 +308,9 @@ h2, h3, .faculty-dashboard-header, .proctor-dashboard-header {
 
 /* Themed Status Overrides (Enforces sharp semantic tracking while matching palettes) */
 .exam-card.status-approved { border-left-color: #4f2c1d; border-color: #c5bbb1; } /* Solid Brown accent stripe */
-.exam-card.status-denied { border-left-color: #000000; border-color: #9f9081; }   /* High Contrast Black accent stripe */
-.exam-card.status-pending { border-left-color: #ffb500; border-color: #c5bbb1; }  /* Gold stripe */
+.exam-card.status-denied { border-left-color: #000000; border-color: #9f9081; } /* High Contrast Black accent stripe */
+.exam-card.status-pending { border-left-color: #ffb500; border-color: #c5bbb1; } /* Gold stripe */
 .exam-card.status-proctor-found { border-left-color: #7a6855; border-color: #c5bbb1; }
-
 
 /* High Contrast Pill Badges */
 .badge {
@@ -277,23 +320,27 @@ h2, h3, .faculty-dashboard-header, .proctor-dashboard-header {
     border-radius: 10px;
     text-transform: uppercase;
     margin-bottom: 10px;
-    background-color: #4f2c1d; color: #ffffff;
+    background-color: #4f2c1d; 
+    color: #ffffff;
 }
 .badge-denied { background-color: #000000; color: #ffffff; }
 .badge-pending { background-color: #ffb500; color: #000000; }
 .badge-proctor-found { background-color: #7a6855; color: #ffffff; }
 
-/* ==========================================================================
-   Layout Multi-column Core Grid Setup
-   ========================================================================== */
+/* =========================================================================
+   LAYOUT MULTI-COLUMN CORE GRID SETUP (Page 12-13)
+   ========================================================================= */
 .tab-content {
-    display: none;
+    display: none !important; /* Managed securely by the ~ checked radio state logic selector */
     padding: 24px;
     background-color: #ffffff;
 }
 
-.tab-content:not(.hidden)[aria-hidden="false"] {
-    display: block;
+/* Native CSS Tab Target Activation Toggles */
+#tab1-input:checked ~ #tab1,
+#tab2-input:checked ~ #tab2,
+#tab3-input:checked ~ #tab3 {
+    display: block !important;
 }
 
 .tab-columns-wrapper {
@@ -316,14 +363,11 @@ h2, h3, .faculty-dashboard-header, .proctor-dashboard-header {
     padding-right: 6px;
 }
 
-/* Responsive adjustment parameters */
-@media (max-width: 850px) {
-    .tab-columns-wrapper {
-        flex-direction: column;
-    }
-}
-
+/* =========================================================================
+   VISIBILITY HELPERS & HEADERS (Page 14-15)
+   ========================================================================= */
 .hidden { display: none !important; }
+
 .sr-only {
     position: absolute;
     width: 1px;
@@ -335,51 +379,41 @@ h2, h3, .faculty-dashboard-header, .proctor-dashboard-header {
     border: 0;
 }
 
-/* ==========================================================================
-   Main Application Header Style Layer
-   ========================================================================== */
 .app-header {
     width: 100%;
     max-width: 1100px;
-    margin: 0 auto 24px auto;   /* Spacing directly below the title block */
-    text-align: center;         /* Centers the application title completely */
+    margin: 0 auto 24px auto; /* Spacing directly below title block */
+    text-align: center; /* Centers application title completely */
     padding: 20px;
-    background-color: #ffffff;  /* Content backing */
-    border: 1px solid #c5bbb1;  /* Warm secondary boundary frame */
+    background-color: #ffffff; /* Content backing */
+    border: 1px solid #c5bbb1; /* Warm secondary boundary frame */
     border-radius: 8px;
     box-shadow: 0 4px 8px rgba(79, 44, 29, 0.05);
     position: relative;
     overflow: hidden;
 }
 
-/* Primary Gold decorative structural bar at the top of the header panel */
+/* Primary Gold decorative structural bar at top of header panel */
 .header-logo-accent {
     position: absolute;
     top: 0;
     left: 0;
     width: 100%;
     height: 6px;
-    background-color: #ffb500;  /* Official Gold accent stripe */
+    background-color: #ffb500; /* Official Gold accent stripe */
 }
 
 .app-header h1 {
     font-size: 26px;
     font-weight: bold;
-    color: #4f2c1d;             /* Official primary brown typography */
+    color: #4f2c1d; /* Official primary brown typography */
     margin: 8px 0 6px 0;
     line-height: 1.3;
 }
 
-/* Adjust page body to stack items vertically layout */
-body {
-    flex-direction: column;     /* Stacks the new header vertically above the tabs container */
-    justify-content: flex-start; /* Aligns page content seamlessly from the top */
-    padding-top: 30px;
-}
-
-/* ==========================================================================
-   Secure Portal Entrance Gateway Login Styling 
-   ========================================================================== */
+/* =========================================================================
+   SECURE PORTAL ENTRANCE LOGIN GATEWAY (Page 16-19)
+   ========================================================================= */
 .login-wrapper {
     width: 100%;
     max-width: 500px;
@@ -419,10 +453,9 @@ body {
     font-style: italic;
 }
 
-/* User Account Verification Guidebox */
 .credential-matrix-box {
     background-color: #f1efed; /* Light Brown at 5% */
-    border: 1px solid #c5bbb1;  /* Light Brown at 35% */
+    border: 1px solid #c5bbb1; /* Light Brown at 35% */
     padding: 12px;
     border-radius: 4px;
     margin: 18px 0;
@@ -468,7 +501,6 @@ body {
     box-shadow: 0 2px 4px rgba(0,0,0,0.05);
 }
 
-/* Log Out Header Action Alignment */
 .logout-link-btn {
     position: absolute;
     bottom: 15px;
@@ -499,28 +531,11 @@ body {
     font-size: larger;
 }
 
-css.tab-radio-state {
-    position: absolute;
-    opacity: 0;
-    pointer-events: none;
-}
-
-.tab-content {
-    display: none;
-}
-
-/* Show the active panel layout instantly */
-#tab1-input:checked ~ #tab1,
-#tab2-input:checked ~ #tab2,
-#tab3-input:checked ~ #tab3 {
-    display: block;
-}
-
-/* Active style highlight states */
-#tab1-input:checked ~ .tab-buttons #btn-tab1,
-#tab2-input:checked ~ .tab-buttons #btn-tab2,
-#tab3-input:checked ~ .tab-buttons #btn-tab3 {
-    background-color: #7a6855;
-    color: white;
-    border-bottom: 3px solid #630015;
+/* =========================================================================
+   RESPONSIVE LAYOUT MEDIA QUERIES (Page 13)
+   ========================================================================= */
+@media (max-width: 850px) {
+    .tab-columns-wrapper {
+        flex-direction: column;
+    }
 }

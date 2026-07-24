@@ -115,7 +115,6 @@
                     <details class="filter-dropdown-wrapper" id="stFilterDropdown">
                         <summary class="filter-dropdown-trigger">Filter & Sort</summary>
                         <div class="global-filter-bar">
-                            <!-- Toggle -->
                             <div class="filter-row toggle-row">
                                 <span class="toggle-label">Sort By:</span>
                                 <label class="radio-label">
@@ -127,24 +126,29 @@
                                     <span>Exam Date</span>
                                 </label>
                             </div>
-                            <!-- Date range -->
                             <div class="filter-row toggle-row">
-                                <label for="stStart" id="stStartLabel">From</label>
+                                <label for="stStart">From</label>
                                 <input type="date" id="stStart" onchange="processTabFiltering('student', 'examFeed')">
-                                <label for="stEnd" id="stEndLabel">To</label>
+                                <label for="stEnd">To</label>
                                 <input type="date" id="stEnd" onchange="processTabFiltering('student', 'examFeed')">
                             </div>
-                            <!-- Ordering -->
                             <div class="filter-row toggle-row">
                                 <label for="stSort">Order:</label>
                                 <select id="stSort" onchange="processTabFiltering('student', 'examFeed')">
-                                    <option value="desc" id="stSortDescLabel">Newest First</option>
-                                    <option value="asc" id="stSortAscLabel">Oldest First</option>
+                                    <option value="desc">Newest First</option>
+                                    <option value="asc">Oldest First</option>
                                 </select>
                             </div>
-                    <div class="filter-row toggle-row">
-                        <button type="button" class="filter-clear-btn" onclick="clearFilters('examFeed')">Clear Filters</button>
-                    </div>
+                            <div class="filter-row toggle-row">
+                                <button type="button" class="btn btn-secondary btn-sm" onclick="resetTabFilters('student', 'examFeed')">Reset Filters</button>
+                            </div>
+                        </div>
+                    </details>
+
+                    <div class="exam-feed-scroll" id="examFeed">
+                        {% for exam in student_exams %}
+                        <div class="exam-card status-{{ exam.statusID|lower|replace(' ', '-') }}" data-submission-date="{{ exam.sub_date }}" data-exam-date="{{ exam.pref_date }}">
+                            <div class="exam-card-header">
                                 <h4>{{ exam.studentFirstName }} {{ exam.studentLastName }}</h4>
                                 <span class="badge badge-{{ exam.statusID|lower|replace(' ', '-') }}">{{ exam.statusID }}</span>
                             </div>
@@ -174,47 +178,51 @@
             <!-- Filter Dropdown [STILL BROKEN] -->
             <details class="filter-dropdown-wrapper" id="faFilterDropdown">
                 <summary class="filter-dropdown-trigger">Filter & Sort</summary>
-                    <div class="global-filter-bar">
-                        <!-- Course dropdown -->
-                        <div class="filter-row toggle-row">
-                            <label for="faCourse">Course:</label>
-                            <select id="faCourse" onchange="processTabFiltering('faculty', 'facultyRequestsFeed')">
-                                <option value="ALL">All Courses</option>
-                                {% for course in courses %}
-                                    <option value="{{ course.idExamCourse }}">{{ course.idExamCourse }}</option>
-                                {% endfor %}
-                            </select>
-                        </div>
-                        <!-- Toggle-->
-                        <div class="filter-row toggle-row">
-                            <span class="toggle-label">Sort By:</span>
-                            <label class="radio-label">
-                                <input type="radio" name="faDateType" value="submission" checked onchange="handleDateTypeToggle('faculty', 'facultyRequestsFeed')">
-                                <span>Submission Date</span>
-                            </label>
-                            <label class="radio-label">
-                                <input type="radio" name="faDateType" value="exam" onchange="handleDateTypeToggle('faculty', 'facultyRequestsFeed')">
-                                <span>Exam Date</span>
-                            </label>
-                        </div>
-                        <!-- Date range -->
-                        <div class="filter-row toggle-row">
-                            <label for="faStart" id="faStartLabel">From</label>
-                            <input type="date" id="faStart" onchange="processTabFiltering('faculty', 'facultyRequestsFeed')">
-                            <label for="faEnd" id="faEndLabel">To</label>
-                            <input type="date" id="faEnd" onchange="processTabFiltering('faculty', 'facultyRequestsFeed')">
-                        </div>
-                        <!-- Ordering -->
-                        <div class="filter-row toggle-row">
-                            <label for="faSort">Order:</label>
-                            <select id="faSort" onchange="processTabFiltering('faculty', 'facultyRequestsFeed')">
-                                <option value="desc" id="faSortDescLabel">Newest First</option>
-                                <option value="asc" id="faSortAscLabel">Oldest First</option>
-                            </select>
-                        </div>
+                <div class="global-filter-bar">
+                    <!-- Course dropdown (Extracts unique courses from faculty_exams) -->
                     <div class="filter-row toggle-row">
-                        <button type="button" class="filter-clear-btn" onclick="clearFilters('facultyRequestsFeed')">Clear Filters</button>
+                        <label for="faCourse">Course:</label>
+                        <select id="faCourse" onchange="processTabFiltering('faculty', 'facultyRequestsFeed')">
+                            <option value="ALL">All Courses</option>
+                            {% for course_id in faculty_exams | map(attribute='idExamCourse') | unique %}
+                                <option value="{{ course_id }}">{{ course_id }}</option>
+                            {% endfor %}
+                        </select>
                     </div>
+                    <div class="filter-row toggle-row">
+                        <span class="toggle-label">Sort By:</span>
+                        <label class="radio-label">
+                            <input type="radio" name="faDateType" value="submission" checked onchange="handleDateTypeToggle('faculty', 'facultyRequestsFeed')">
+                            <span>Submission Date</span>
+                        </label>
+                        <label class="radio-label">
+                            <input type="radio" name="faDateType" value="exam" onchange="handleDateTypeToggle('faculty', 'facultyRequestsFeed')">
+                            <span>Exam Date</span>
+                        </label>
+                    </div>
+                    <div class="filter-row toggle-row">
+                        <label for="faStart">From</label>
+                        <input type="date" id="faStart" onchange="processTabFiltering('faculty', 'facultyRequestsFeed')">
+                        <label for="faEnd">To</label>
+                        <input type="date" id="faEnd" onchange="processTabFiltering('faculty', 'facultyRequestsFeed')">
+                    </div>
+                    <div class="filter-row toggle-row">
+                        <label for="faSort">Order:</label>
+                        <select id="faSort" onchange="processTabFiltering('faculty', 'facultyRequestsFeed')">
+                            <option value="desc">Newest First</option>
+                            <option value="asc">Oldest First</option>
+                        </select>
+                    </div>
+                    <div class="filter-row toggle-row">
+                        <button type="button" class="btn btn-secondary btn-sm" onclick="resetTabFilters('faculty', 'facultyRequestsFeed')">Reset Filters</button>
+                    </div>
+                </div>
+            </details>
+
+            <div class="faculty-requests-container" id="facultyRequestsFeed">
+                <!-- Restricts displayed course requests to what courses the user teaches. -->
+                {% for exam in faculty_exams %}
+                <div class="exam-card faculty-card status-{{ exam.statusID|lower|replace(' ', '-') }}" data-course="{{ exam.idExamCourse }}" data-submission-date="{{ exam.sub_date }}" data-exam-date="{{ exam.pref_date }}">
                     <form action="/faculty/update-request" method="POST">
                         <input type="hidden" name="request_id" value="{{ exam.idExamRequest }}">
                         
@@ -279,34 +287,36 @@
         <div id="tab3" class="tab-content" role="tabpanel" aria-labelledby="btn-tab3" aria-hidden="true">
             <h2 class="sr-only">Proctor Portal</h2>
             <h3>Exams In-Need of Proctoring</h3>
-            
+
             <div class="tab-columns-wrapper">
                 <!-- Available Exams -->
                 <div class="tab-column proctor-column">
                     <h3>Open Requests</h3>
-                    <details class="filter-dropdown-wrapper" id="prOpenFilterDropdown">
+                    
+                      <details class="filter-dropdown-wrapper" id="prOpenFilterDropdown">
                         <summary class="filter-dropdown-trigger">Filter & Sort</summary>
                         <div class="global-filter-bar column-filter-bar">
                             <div class="filter-row toggle-row">
                                 <span class="toggle-label">Sort By:</span>
-                                <label class="radio-label"><input type="radio" name="openDateType" value="submission" checked onchange="handleColumnDateTypeToggle('proctorOpen', 'openProctorFeed')"> <span>Submission</span></label>
-                                <label class="radio-label"><input type="radio" name="openDateType" value="exam" onchange="handleColumnDateTypeToggle('proctorOpen', 'openProctorFeed')"> <span>Exam</span></label>
+                                <label class="radio-label"><input type="radio" name="prOpenDateType" value="submission" checked onchange="handleDateTypeToggle('proctorOpen', 'openProctorFeed')"> <span>Submission</span></label>
+                                <label class="radio-label"><input type="radio" name="prOpenDateType" value="exam" onchange="handleDateTypeToggle('proctorOpen', 'openProctorFeed')"> <span>Exam</span></label>
                             </div>
                             <div class="filter-row toggle-row">
-                                <label for="openStart" id="openStartLabel">From:</label><input type="date" id="openStart" onchange="processColumnFiltering('proctorOpen', 'openProctorFeed')">
-                                <label for="openEnd" id="openEndLabel">To:</label><input type="date" id="openEnd" onchange="processColumnFiltering('proctorOpen', 'openProctorFeed')">
+                                <label for="prOpenStart">From:</label><input type="date" id="prOpenStart" onchange="processTabFiltering('proctorOpen', 'openProctorFeed')">
+                                <label for="prOpenEnd">To:</label><input type="date" id="prOpenEnd" onchange="processTabFiltering('proctorOpen', 'openProctorFeed')">
                             </div>
                             <div class="filter-row toggle-row">
-                                <label for="openSort">Order:</label><select id="openSort" onchange="processColumnFiltering('proctorOpen', 'openProctorFeed')"><option value="desc" id="openSortDescLabel">Newest First</option><option value="asc" id="openSortAscLabel">Oldest First</option></select>
+                                <label for="prOpenSort">Order:</label>
+                                <select id="prOpenSort" onchange="processTabFiltering('proctorOpen', 'openProctorFeed')">
+                                    <option value="desc">Newest First</option>
+                                    <option value="asc">Oldest First</option>
+                                </select>
                             </div>
                             <div class="filter-row toggle-row">
-                                <button type="button" class="filter-clear-btn" onclick="clearFilters('openProctorFeed')">Clear Filters</button>
+                                <button type="button" class="btn btn-secondary btn-sm" onclick="resetTabFilters('proctorOpen', 'openProctorFeed')">Reset Filters</button>
                             </div>
                         </div>
                     </details>
-                    <div class="proctor-feed-scroll" id="openProctorFeed">
-                <div class="tab-column proctor-column">
-                    <h3>Open Requests</h3>
                     <div class="proctor-feed-scroll" id="openProctorFeed">
                         {% for exam in proctor_exams if exam.statusID == 'Approved By Faculty (Initial)' %}
                         <div class="exam-card status-{{ exam.statusID|lower|replace(' ', '-') }}" data-submission-date="{{ exam.sub_date }}" data-exam-date="{{ exam.pref_date }}">
@@ -338,26 +348,32 @@
                 <!-- Exams agreed to proctor -->
                 <div class="tab-column proctor-column">
                     <h3>Your Agreed Exams</h3>
+                    
                     <details class="filter-dropdown-wrapper" id="prAgreedFilterDropdown">
                         <summary class="filter-dropdown-trigger">Filter & Sort</summary>
                         <div class="global-filter-bar column-filter-bar">
                             <div class="filter-row toggle-row">
                                 <span class="toggle-label">Sort By:</span>
-                                <label class="radio-label"><input type="radio" name="agreedDateType" value="submission" checked onchange="handleColumnDateTypeToggle('proctorAgreed', 'agreedProctorFeed')"> <span>Submission</span></label>
-                                <label class="radio-label"><input type="radio" name="agreedDateType" value="exam" onchange="handleColumnDateTypeToggle('proctorAgreed', 'agreedProctorFeed')"> <span>Exam</span></label>
+                                <label class="radio-label"><input type="radio" name="prAgreedDateType" value="submission" checked onchange="handleDateTypeToggle('proctorAgreed', 'agreedProctorFeed')"> <span>Submission</span></label>
+                                <label class="radio-label"><input type="radio" name="prAgreedDateType" value="exam" onchange="handleDateTypeToggle('proctorAgreed', 'agreedProctorFeed')"> <span>Exam</span></label>
                             </div>
                             <div class="filter-row toggle-row">
-                                <label for="agreedStart" id="agreedStartLabel">From:</label><input type="date" id="agreedStart" onchange="processColumnFiltering('proctorAgreed', 'agreedProctorFeed')">
-                                <label for="agreedEnd" id="agreedEndLabel">To:</label><input type="date" id="agreedEnd" onchange="processColumnFiltering('proctorAgreed', 'agreedProctorFeed')">
+                                <label for="prAgreedStart">From:</label><input type="date" id="prAgreedStart" onchange="processTabFiltering('proctorAgreed', 'agreedProctorFeed')">
+                                <label for="prAgreedEnd">To:</label><input type="date" id="prAgreedEnd" onchange="processTabFiltering('proctorAgreed', 'agreedProctorFeed')">
                             </div>
                             <div class="filter-row toggle-row">
-                                <label for="agreedSort">Order:</label><select id="agreedSort" onchange="processColumnFiltering('proctorAgreed', 'agreedProctorFeed')"><option value="desc" id="agreedSortDescLabel">Newest First</option><option value="asc" id="agreedSortAscLabel">Oldest First</option></select>
+                                <label for="prAgreedSort">Order:</label>
+                                <select id="prAgreedSort" onchange="processTabFiltering('proctorAgreed', 'agreedProctorFeed')">
+                                    <option value="desc">Newest First</option>
+                                    <option value="asc">Oldest First</option>
+                                </select>
                             </div>
                             <div class="filter-row toggle-row">
-                                <button type="button" class="filter-clear-btn" onclick="clearFilters('agreedProctorFeed')">Clear Filters</button>
+                                <button type="button" class="btn btn-secondary btn-sm" onclick="resetTabFilters('proctorAgreed', 'agreedProctorFeed')">Reset Filters</button>
                             </div>
                         </div>
                     </details>
+
                     <div class="proctor-feed-scroll" id="agreedProctorFeed">
                         
                         <!-- Confirms that the exam is being proctored by the current user -->

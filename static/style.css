@@ -238,21 +238,6 @@ h2, h3, .faculty-dashboard-header, .proctor-dashboard-header {
     background-color: #000000; /* Deep black accent highlight overlay */
 }
 
-.filter-clear-btn {
-    background-color: #ffffff;
-    color: #4f2c1d;
-    border: 1px solid #4f2c1d;
-    padding: 10px 14px;
-    border-radius: 4px;
-    font-weight: bold;
-    cursor: pointer;
-}
-
-.filter-clear-btn:hover {
-    background-color: #4f2c1d;
-    color: #ffffff;
-}
-
 .btn-drop {
     background-color: #ffffff;
     color: #000000;

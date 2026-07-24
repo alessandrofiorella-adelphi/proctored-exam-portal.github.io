@@ -42,17 +42,21 @@
     {% endif %}
 
     <!-- Tab Labels Header Bar -->
-    <div class="tab-buttons" role="tablist" aria-label="Academic Management Dashboard">
+    <div class="tab-buttons" role="tablist" aria-label="Academic Management Dashboard"
+        data-student="{{ 'true' if is_student else 'false' }}"
+        data-faculty="{{ 'true' if is_faculty else 'false' }}"
+        data-proctor="{{ 'true' if is_proctor else 'false' }}">
+        
         {% if is_student %}
-            <label for="tab1-input" class="tab-btn" tabindex="0" id="btn-tab1">Student</label>
+            <button id="btn-tab1" class="tab-btn" role="tab" aria-selected="true" aria-controls="tab1" tabindex="0">Student</button>
         {% endif %}
         
         {% if is_faculty %}
-            <label for="tab2-input" class="tab-btn" tabindex="0" id="btn-tab2">Faculty</label>
+            <button id="btn-tab2" class="tab-btn" role="tab" aria-selected="false" aria-controls="tab2" tabindex="-1">Faculty</button>
         {% endif %}
         
         {% if is_proctor %}
-            <label for="tab3-input" class="tab-btn" tabindex="0" id="btn-tab3">Proctor</label>
+            <button id="btn-tab3" class="tab-btn" role="tab" aria-selected="false" aria-controls="tab3" tabindex="-1">Proctor</button>
         {% endif %}
     </div>
 

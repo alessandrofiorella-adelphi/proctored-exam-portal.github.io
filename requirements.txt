@@ -1,2 +1,5 @@
 paramiko
 streamlit
+Flask
+sshtunnel
+mysql-connector-python

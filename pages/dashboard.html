@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AU Proctored Exam Portal</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB" crossorigin="anonymous">
+    <link rel="stylesheet" href="../static/style.css">
+    <script src="../js/dashfunctions.js"></script>
+</head>
+
+<!-- Main Application Header Bar -->
+<header class="app-header">
+    <div class="header-logo-accent"></div>
+    <h1>Adelphi University Proctored Exam Portal</h1>
+    
+    <div class="header-user-profile-badge">
+        Active User: {{ first_name }} {{ last_name }}
+        &nbsp;|&nbsp; ID: #{{ current_user_id }} 
+        &nbsp;|&nbsp; Email: {{ email }}
+    </div>
+    
+    <!-- Log Out button element link endpoint -->
+    <button onclick="window.location.href='/logout'" class="logout-link-btn" aria-label="Log out of secure portal session">Log Out</button>
+</header>
+
+<body>
+    <div class="tab-container">
+        <!-- Tabs are only visible to users with that role (EX: Students can only view their tab, while faculty that are taking classes can view both). -->
+        <div class="tab-buttons" role="tablist" aria-label="Academic Management Dashboard"
+            data-server-role="{{ user_role }}"
+            data-student="{{ 'true' if is_student else 'false' }}"
+            data-faculty="{{ 'true' if is_faculty else 'false' }}"
+            data-proctor="{{ 'true' if is_proctor else 'false' }}">
+            <button id="btn-tab1" class="tab-btn" role="tab" aria-selected="true" aria-controls="tab1" tabindex="0">Student</button>
+            <button id="btn-tab2" class="tab-btn" role="tab" aria-selected="false" aria-controls="tab2" tabindex="-1">Faculty</button>
+            <button id="btn-tab3" class="tab-btn" role="tab" aria-selected="false" aria-controls="tab3" tabindex="-1">Proctor</button>
+        </div>
+
+
+<!-- ==================== Student Tab ==================== -->
+        <div id="tab1" class="tab-content" role="tabpanel" aria-labelledby="btn-tab1" aria-hidden="false">
+            <h2 class="sr-only">Student Dashboard</h2>
+            <div class="tab-columns-wrapper">
+                
+                <!-- Proctored Exam Request Form -->
+                <div class="tab-column">
+                    <h3>Request to Proctor</h3>
+                    <form action="/submit-registration" method="POST" id="courseRegistrationForm">
+                        
+                        <!-- The following three fields are autofilled and immutable for convenience -->
+                        <div class="form-group">
+                            <label for="firstName">First Name</label>
+                            <input type="text" id="firstName" name="first_name" value="{{ first_name }}" readonly>
+                        </div>
+                        <div class="form-group">
+                            <label for="lastName">Last Name</label>
+                            <input type="text" id="lastName" name="last_name" value="{{ last_name }}" readonly>
+                        </div>
+                        <div class="form-group">
+                            <label for="email">Email Address</label>
+                            <input type="email" id="email" name="email_address" value="{{ email }}" readonly>
+                        </div>
+
+                        <!-- Only courses that the student is registered for appear here. -->
+                        <div class="form-group">
+                            <label for="courseSelect">Select Course</label>
+                            <select id="courseSelect" name="selected_course_id" onchange="applyMeetingDaysClamping()" required>
+                                <option value="" disabled selected>-- Select your course --</option>
+                                {% for course in courses %}
+                                    <option value="{{ course.idExamCourse }}" 
+                                            data-days="{{ course.meetingDays }}"
+                                            data-start="{{ course.courseStartStr }}"
+                                            data-end="{{ course.courseEndStr }}"
+                                            data-time="{{ course.meetingStart }}">
+                                        {{ course.idExamCourse }} - {{ course.courseName }} ({{ course.meetingDays }})
+                                    </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <!-- Students can only select the days that their courses meet; this seems to be standard -->
+                        <div class="form-group">
+                            <label for="startDate">Date of Exam</label>
+                            <input type="date" id="startDate" name="start_date" oninput="enforceMeetingDaySelection(this)" onchange="enforceMeetingDaySelection(this)" required disabled>
+                            <!-- Warns students that try to select dates that their class does not meet. -->
+                            <p id="dateWarningMessage" class="hidden"></p>
+                        </div>
+
+                        <fieldset class="accessible-fieldset">
+                            <h5>Exam Accommodations</h2>
+                            <p class="sub-description">Please only select the approved accommodations you would like to use on this exam.</p>    
+                            <div class="checkbox-group">
+                                {% for option in approved_accomm_options %}
+                                    <label class="checkbox-label">
+                                        <!-- Value attribute tracks the raw ID string to save as a delimiter text block -->
+                                        <input type="checkbox" name="selected_accomm_ids[]" value="{{ option.accommodationID }}">
+                                        <span>{{ option.accommodationName }}</span>
+                                    </label>
+                                {% else %}
+                                    <p class="sub-description">Our records indicate you have no approved accommodations at this time.</p>
+                                {% endfor %}
+                            </div>
+                        </fieldset>
+
+                        <button type="submit" class="form-submit-btn" id="submitFormBtn">Submit Request</button>
+                    </form>
+                </div>
+
+                <!-- Previous Requests Column -->
+                <div class="tab-column">
+                    <h3>Previous Requests</h3>
+                    
+                    <!-- Filter [NOT WORKING] -->
+                    <details class="filter-dropdown-wrapper" id="stFilterDropdown">
+                        <summary class="filter-dropdown-trigger">Filter & Sort</summary>
+                        <div class="global-filter-bar">
+                            <!-- Toggle -->
+                            <div class="filter-row toggle-row">
+                                <span class="toggle-label">Sort By:</span>
+                                <label class="radio-label">
+                                    <input type="radio" name="stDateType" value="submission" checked onchange="handleDateTypeToggle('student', 'examFeed')">
+                                    <span>Submission Date</span>
+                                </label>
+                                <label class="radio-label">
+                                    <input type="radio" name="stDateType" value="exam" onchange="handleDateTypeToggle('student', 'examFeed')">
+                                    <span>Exam Date</span>
+                                </label>
+                            </div>
+                            <!-- Date range -->
+                            <div class="filter-row toggle-row">
+                                <label for="stStart" id="stStartLabel">From</label>
+                                <input type="date" id="stStart" onchange="processTabFiltering('student', 'examFeed')">
+                                <label for="stEnd" id="stEndLabel">To</label>
+                                <input type="date" id="stEnd" onchange="processTabFiltering('student', 'examFeed')">
+                            </div>
+                            <!-- Ordering -->
+                            <div class="filter-row toggle-row">
+                                <label for="stSort">Order:</label>
+                                <select id="stSort" onchange="processTabFiltering('student', 'examFeed')">
+                                    <option value="desc" id="stSortDescLabel">Newest First</option>
+                                    <option value="asc" id="stSortAscLabel">Oldest First</option>
+                                </select>
+                            </div>
+                        </div>
+                    </details>
+
+                    <div class="exam-feed-scroll" id="examFeed">
+                        {% for exam in student_exams %}
+                        <div class="exam-card status-{{ exam.statusID|lower|replace(' ', '-') }}" data-submission-date="{{ exam.sub_date }}" data-exam-date="{{ exam.pref_date }}">
+                            <div class="exam-card-header">
+                                <h4>{{ exam.studentFirstName }} {{ exam.studentLastName }}</h4>
+                                <span class="badge badge-{{ exam.statusID|lower|replace(' ', '-') }}">{{ exam.statusID }}</span>
+                            </div>
+                            <div class="exam-card-body">
+                                <p><strong>Submitted On:</strong> {{ exam.sub_date }}</p>
+                                <p><strong>Course:</strong> {{ exam.courseName }} ({{ exam.idExamCourse }})</p>
+                                <p><strong>Exam Date:</strong> {{ exam.pref_date }} at {{ exam.requestedTime }}</p>
+                                <p><strong>Accommodations Selected:</strong> {{ exam.accommodations }}</p>
+                                <p><strong>Proctor:</strong> {{ exam.proctorName or 'Awaiting Assignment' }}</p>
+                            </div>
+                        </div>
+                        {% else %}
+                        <p class="sub-description">No exam requests found.</p>
+                        {% endfor %}
+                    </div>
+                </div>
+
+            </div>
+        </div>
+<!-- =================================================================== -->
+
+<!-- ==================== Faculty Tab ==================== -->
+        <div id="tab2" class="tab-content" role="tabpanel" aria-labelledby="btn-tab2" aria-hidden="true">
+            <h2 class="sr-only">Faculty Dashboard</h2>
+            <h3>Proctored Exam Requests for Courses Instructed</h3>
+            
+            <!-- Filter Dropdown [STILL BROKEN] -->
+            <details class="filter-dropdown-wrapper" id="faFilterDropdown">
+                <summary class="filter-dropdown-trigger">Filter & Sort</summary>
+                    <div class="global-filter-bar">
+                        <!-- Course dropdown -->
+                        <div class="filter-row toggle-row">
+                            <label for="faCourse">Course:</label>
+                            <select id="faCourse" onchange="processTabFiltering('faculty', 'facultyRequestsFeed')">
+                                <option value="ALL">All Courses</option>
+                                {% for course in courses %}
+                                    <option value="{{ course.idExamCourse }}">{{ course.idExamCourse }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <!-- Toggle-->
+                        <div class="filter-row toggle-row">
+                            <span class="toggle-label">Sort By:</span>
+                            <label class="radio-label">
+                                <input type="radio" name="stDateType" value="submission" checked onchange="handleDateTypeToggle('student', 'examFeed')">
+                                <span>Submission Date</span>
+                            </label>
+                            <label class="radio-label">
+                                <input type="radio" name="stDateType" value="exam" onchange="handleDateTypeToggle('student', 'examFeed')">
+                                <span>Exam Date</span>
+                            </label>
+                        </div>
+                        <!-- Date range -->
+                        <div class="filter-row toggle-row">
+                            <label for="stStart" id="stStartLabel">From</label>
+                            <input type="date" id="stStart" onchange="processTabFiltering('student', 'examFeed')">
+                            <label for="stEnd" id="stEndLabel">To</label>
+                            <input type="date" id="stEnd" onchange="processTabFiltering('student', 'examFeed')">
+                        </div>
+                        <!-- Ordering -->
+                        <div class="filter-row toggle-row">
+                            <label for="stSort">Order:</label>
+                            <select id="stSort" onchange="processTabFiltering('student', 'examFeed')">
+                                <option value="desc" id="stSortDescLabel">Newest First</option>
+                                <option value="asc" id="stSortAscLabel">Oldest First</option>
+                            </select>
+                        </div>
+                        </div>
+            </details>
+
+            <div class="faculty-requests-container" id="facultyRequestsFeed">
+                <!-- Restricts displayed course requests to what courses the user teaches. -->
+                {% for exam in faculty_exams %}
+                <div class="exam-card faculty-card status-{{ exam.statusID|lower|replace(' ', '-') }}" data-course="{{ exam.idExamCourse }}" data-submission-date="{{ exam.sub_date }}" data-exam-date="{{ exam.pref_date }}">
+                    <form action="/faculty/update-request" method="POST">
+                        <input type="hidden" name="request_id" value="{{ exam.idExamRequest }}">
+                        
+                        <div class="faculty-card-header">
+                            <h4>{{ exam.studentFirstName }} {{ exam.studentLastName }}</h4>
+                            <span class="badge badge-{{ exam.statusID|lower|replace(' ', '-') }}">Current Status: {{ exam.statusID }}</span>
+                        </div>
+                        
+                        <div class="faculty-card-grid">
+                            <div class="meta-field"><strong>Course:</strong> <span>{{ exam.courseName }} ({{ exam.idExamCourse }})</span></div>
+                            <div class="meta-field"><strong>Student Email:</strong> <span>{{ exam.studentEmail }}</span></div>
+                            <div class="meta-field"><strong>Accommodations:</strong> <span>{{ exam.accommodations or 'None' }}</span></div>
+                            <div class="meta-field"><strong>Proctor Email:</strong> <span>{{ exam.proctorEmail or 'N/A' }}</span></div>
+                            
+                            <!-- Allows faculty to input exam length and to update exam date in case student requests incorrectly. -->
+                            {% if exam.statusID == 'Requested' %}
+                                <div class="faculty-control-group">
+                                    <label for="editDate-{{ exam.idExamRequest }}">Modify Exam Date:</label>
+                                    <input type="date" id="editDate-{{ exam.idExamRequest }}" name="assigned_exam_date" value="{{ exam.pref_date }}" required>
+                                </div>
+                                <div class="faculty-control-group">
+                                    <label for="editDuration-{{ exam.idExamRequest }}">Length (Mins):</label>
+                                    <input type="number" id="editDuration-{{ exam.idExamRequest }}" name="exam_duration_minutes" value="{{ exam.actualLength or 60 }}" required>
+                                </div>
+                            {% else %}
+                                <div class="meta-field"><strong>Exam Date:</strong> <span>{{ exam.actualDate or exam.pref_date }}</span></div>
+                                <div class="meta-field"><strong>Length:</strong> <span>{{ exam.actualLength or 60 }} Minutes</span></div>
+                            {% endif %}
+                        </div>
+                        
+                        <!-- Changes how faculty can interact based on the status of the request. -->
+                        <div class="faculty-card-actions">
+                            <!-- When originally requested... -->
+                            {% if exam.statusID == 'Requested' %}
+                                <button type="submit" name="action_type" value="approve_request" class="faculty-save-btn btn-action-approve">Approve Request</button>
+                                <button type="submit" name="action_type" value="deny_request" class="faculty-save-btn btn-action-deny" onclick="return confirm('Are you sure you want to deny this request?')">Deny Request</button>
+                                
+                            <!-- When approved by the proctor... -->
+                            {% elif exam.statusID == 'Approved By Proctor' %}
+                                <button type="submit" name="action_type" value="approve_proctor" class="faculty-save-btn btn-action-proctor">Approve Proctor</button>
+                                <button type="submit" name="action_type" value="cancel_request" class="faculty-save-btn btn-action-cancel" onclick="return confirm('Are you sure you want to cancel this request?')">Cancel Exam</button>
+                                
+                            <!-- When approved by faculty (initially)... -->
+                            {% elif exam.statusID == 'Approved By Faculty (Initial)' %}
+                                <button type="submit" name="action_type" value="cancel_request" class="faculty-save-btn btn-action-cancel" onclick="return confirm('Are you sure you want to cancel this request?')">Cancel Exam</button>
+                                
+                            {% else %}
+                            <!-- When everything is finalized... -->
+                                <span class="disabled-placeholder-text">({{ exam.statusID }})</span>
+                            {% endif %}
+                        </div>
+                    </form>
+                </div>
+                {% else %}
+                <p class="sub-description">No exam requests found. </p>
+                {% endfor %}
+            </div>
+        </div>
+<!-- =================================================================== -->
+
+<!-- ==================== Proctor Tab ==================== -->
+        <div id="tab3" class="tab-content" role="tabpanel" aria-labelledby="btn-tab3" aria-hidden="true">
+            <h2 class="sr-only">Proctor Portal</h2>
+            <h3>Exams In-Need of Proctoring</h3>
+            
+            <details class="filter-dropdown-wrapper" id="prOpenFilterDropdown">
+                <summary class="filter-dropdown-trigger">Filter & Sort</summary>
+                <div class="global-filter-bar column-filter-bar">
+                    <div class="filter-row toggle-row">
+                        <span class="toggle-label">Sort By:</span>
+                        <label class="radio-label"><input type="radio" name="proctorOpenDateType" value="submission" checked onchange="handleColumnDateTypeToggle('proctorOpen', 'openProctorFeed')"> <span>Submission</span></label>
+                        <label class="radio-label"><input type="radio" name="proctorOpenDateType" value="exam" onchange="handleColumnDateTypeToggle('proctorOpen', 'openProctorFeed')"> <span>Exam</span></label>
+                    </div>
+                    <div class="filter-row toggle-row">
+                        <label for="proctorOpenStart" id="proctorOpenStartLabel">From:</label><input type="date" id="proctorOpenStart" onchange="processColumnFiltering('proctorOpen', 'openProctorFeed')">
+                        <label for="proctorOpenEnd" id="proctorOpenEndLabel">To:</label><input type="date" id="proctorOpenEnd" onchange="processColumnFiltering('proctorOpen', 'openProctorFeed')">
+                    </div>
+                    <div class="filter-row toggle-row">
+                        <label for="proctorOpenSort">Order:</label><select id="proctorOpenSort" onchange="processColumnFiltering('proctorOpen', 'openProctorFeed')"><option value="desc" id="proctorOpenSortDescLabel">Newest First</option><option value="asc" id="proctorOpenSortAscLabel">Oldest First</option></select>
+                    </div>
+                </div>
+            </details>
+
+            <div class="tab-columns-wrapper">
+                <!-- Available Exams -->
+                <div class="tab-column proctor-column">
+                    <h3>Open Requests</h3>
+                    <div class="proctor-feed-scroll" id="openProctorFeed">
+                        {% for exam in proctor_exams if exam.statusID == 'Approved By Faculty (Initial)' %}
+                        <div class="exam-card status-{{ exam.statusID|lower|replace(' ', '-') }}" data-submission-date="{{ exam.sub_date }}" data-exam-date="{{ exam.pref_date }}">
+                            <form action="/proctor/claim-request" method="POST">
+                                <input type="hidden" name="request_id" value="{{ exam.idExamRequest }}">
+                                <div class="exam-card-header">
+                                    <h4>Course: {{ exam.idExamCourse }}</h4>                                </div>
+                                <div class="exam-card-body">
+                                    <p><strong>Student:</strong> {{ exam.studentFirstName }} {{ exam.studentLastName }}</p>
+                                    <p><strong>Exam Date:</strong> {{ exam.actualDate }} at {{ exam.actualTime }}</p>
+                                    <p><strong>Length:</strong> {{ exam.actualLength }} Minutes </p>
+                                    <p><strong>Accommodations:</strong> {{ exam.accommodations }}</p>
+                                    
+                                    <div class="form-group proctor-input-group">
+                                        <label for="claimLocation-{{ exam.idExamRequest }}">Location:</label>
+                                        <input type="text" id="claimLocation-{{ exam.idExamRequest }}" name="proctor_location" placeholder="e.g., Hagedorn Room 112" required>
+                                    </div>
+                                </div>
+                                <div class="proctor-card-actions">
+                                    <button type="submit" class="proctor-btn btn-claim">Accept & Agree to Proctor</button>
+                                </div>
+                            </form>
+                        </div>
+                        {% else %}
+                        <p style="text-align:center; font-style:italic; padding:20px; color:#555;">No unassigned open exam requests available right now.</p>
+                        {% endfor %}
+                    </div>
+                </div>
+                <!-- Exams agreed to proctor -->
+                <div class="tab-column proctor-column">
+                    <h3>Your Agreed Exams</h3>
+                    <div class="proctor-feed-scroll" id="agreedProctorFeed">
+                        
+                        <!-- Confirms that the exam is being proctored by the current user -->
+                        {% for exam in proctor_exams if exam.statusID in ['Approved By Proctor', 'Approved By Faculty (Final)'] and exam.assignedProctorID == current_user_id %}
+                        <div class="exam-card status-{{ 'approved' if exam.statusID == 'Approved By Faculty (Final)' else 'proctor-found' }}" data-submission-date="{{ exam.sub_date }}" data-exam-date="{{ exam.pref_date }}">
+                            <form action="/proctor/drop-request" method="POST">
+                                <input type="hidden" name="request_id" value="{{ exam.idExamRequest }}">
+                                <div class="exam-card-header">
+                                    <h4>Course: {{ exam.idExamCourse }}</h4>
+                                    <span class="badge badge-{{ 'approved' if exam.statusID == 'Approved By Faculty (Final)' else 'proctor-found' }}">
+                                        {{ 'Confirmed' if exam.statusID == 'Approved By Instructor' else 'Awaiting Instructor Confirmation' }}
+                                    </span>
+                                </div>
+                                <div class="exam-card-body">
+                                    <p><strong>Student:</strong> {{ exam.studentFirstName }} {{ exam.studentLastName }}</p>
+                                    <p><strong>Exam Date:</strong> {{ exam.actualDate }} @ {{ exam.actualTime }}</p>
+                                    <p><strong>Assigned Location:</strong> {{ exam.testingLocation }}</p>
+                                </div>
+                                <div class="proctor-card-actions">
+                                    <button type="submit" class="proctor-btn btn-drop" onclick="return confirm(' Are you sure you want to drop this exam?')">
+                                        Drop Exam
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                        {% else %}
+                        <p class="sub-description">No exams agreed to proctor.</p>
+                        {% endfor %}
+                    </div>
+                </div>
+
+            </div>
+        </div>
+<!-- =================================================================== -->
+    </div>
+</body>
+</html>

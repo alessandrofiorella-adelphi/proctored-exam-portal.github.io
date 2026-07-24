@@ -498,3 +498,29 @@ body {
     font-weight: bolder;
     font-size: larger;
 }
+
+css.tab-radio-state {
+    position: absolute;
+    opacity: 0;
+    pointer-events: none;
+}
+
+.tab-content {
+    display: none;
+}
+
+/* Show the active panel layout instantly */
+#tab1-input:checked ~ #tab1,
+#tab2-input:checked ~ #tab2,
+#tab3-input:checked ~ #tab3 {
+    display: block;
+}
+
+/* Active style highlight states */
+#tab1-input:checked ~ .tab-buttons #btn-tab1,
+#tab2-input:checked ~ .tab-buttons #btn-tab2,
+#tab3-input:checked ~ .tab-buttons #btn-tab3 {
+    background-color: #7a6855;
+    color: white;
+    border-bottom: 3px solid #630015;
+}

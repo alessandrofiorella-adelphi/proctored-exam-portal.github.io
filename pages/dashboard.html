@@ -26,20 +26,39 @@
 
 <body>
     <div class="tab-container">
-        <!-- Tabs are only visible to users with that role (EX: Students can only view their tab, while faculty that are taking classes can view both). -->
-        <div class="tab-buttons" role="tablist" aria-label="Academic Management Dashboard"
-            data-server-role="{{ user_role }}"
-            data-student="{{ 'true' if is_student else 'false' }}"
-            data-faculty="{{ 'true' if is_faculty else 'false' }}"
-            data-proctor="{{ 'true' if is_proctor else 'false' }}">
-            <button id="btn-tab1" class="tab-btn" role="tab" aria-selected="true" aria-controls="tab1" tabindex="0">Student</button>
-            <button id="btn-tab2" class="tab-btn" role="tab" aria-selected="false" aria-controls="tab2" tabindex="-1">Faculty</button>
-            <button id="btn-tab3" class="tab-btn" role="tab" aria-selected="false" aria-controls="tab3" tabindex="-1">Proctor</button>
-        </div>
+    <!-- State Management: Render radio inputs only if user has the role -->
+    {% if is_student %}
+        <input type="radio" id="tab1-input" name="dashboard-tabs" class="tab-radio-state" checked>
+    {% endif %}
+    
+    {% if is_faculty %}
+        <!-- If they aren't a student, make faculty the default open tab -->
+        <input type="radio" id="tab2-input" name="dashboard-tabs" class="tab-radio-state" {{ 'checked' if not is_student }}>
+    {% endif %}
+    
+    {% if is_proctor %}
+        <!-- If they aren't student or faculty, make proctor the default open tab -->
+        <input type="radio" id="tab3-input" name="dashboard-tabs" class="tab-radio-state" {{ 'checked' if not is_student and not is_faculty }}>
+    {% endif %}
 
+    <!-- Tab Labels Header Bar -->
+    <div class="tab-buttons" role="tablist" aria-label="Academic Management Dashboard">
+        {% if is_student %}
+            <label for="tab1-input" class="tab-btn" tabindex="0" id="btn-tab1">Student</label>
+        {% endif %}
+        
+        {% if is_faculty %}
+            <label for="tab2-input" class="tab-btn" tabindex="0" id="btn-tab2">Faculty</label>
+        {% endif %}
+        
+        {% if is_proctor %}
+            <label for="tab3-input" class="tab-btn" tabindex="0" id="btn-tab3">Proctor</label>
+        {% endif %}
+    </div>
 
 <!-- ==================== Student Tab ==================== -->
-        <div id="tab1" class="tab-content" role="tabpanel" aria-labelledby="btn-tab1" aria-hidden="false">
+        {% if is_student %}
+        <div id="tab1" class="tab-content">
             <h2 class="sr-only">Student Dashboard</h2>
             <div class="tab-columns-wrapper">
                 
@@ -168,11 +187,12 @@
 
             </div>
         </div>
+        {% endif %}
 <!-- =================================================================== -->
 
 <!-- ==================== Faculty Tab ==================== -->
-        <div id="tab2" class="tab-content" role="tabpanel" aria-labelledby="btn-tab2" aria-hidden="true">
-            <h2 class="sr-only">Faculty Dashboard</h2>
+        {% if is_faculty %}    
+        <div id="tab2" class="tab-content">            <h2 class="sr-only">Faculty Dashboard</h2>
             <h3>Proctored Exam Requests for Courses Instructed</h3>
             
             <!-- Filter Dropdown [STILL BROKEN] -->
@@ -281,10 +301,12 @@
                 {% endfor %}
             </div>
         </div>
+        {% endif %}
 <!-- =================================================================== -->
 
 <!-- ==================== Proctor Tab ==================== -->
-        <div id="tab3" class="tab-content" role="tabpanel" aria-labelledby="btn-tab3" aria-hidden="true">
+        {% if is_proctor %}    
+        <div id="tab3" class="tab-content">            
             <h2 class="sr-only">Proctor Portal</h2>
             <h3>Exams In-Need of Proctoring</h3>
 
@@ -407,6 +429,7 @@
 
             </div>
         </div>
+        {% endif %}
 <!-- =================================================================== -->
     </div>
 </body>

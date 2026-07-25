@@ -1,9 +1,9 @@
 /*
-    This file contains all Javascript functions for the dashboard, handling tab visibility, data valitation, filtering, and more.
-    This file is required for a lot of the "flashy" functionality included in this form, so theoretically much of this is not strictly necessary
-    for the minimum desired functionality. It does, however, do a lot to improve the user experience.
-
-    Functions are organized in no particular order.
+*   This file contains all Javascript functions for the dashboard, handling tab visibility, data valitation, filtering, and more.
+*   This file is required for a lot of the "flashy" functionality included in this form, so theoretically much of this is not strictly necessary
+*   for the minimum desired functionality. It does, however, do a lot to improve the user experience.
+*
+*   Functions are organized in no particular order.
 */
 
 // Important for tab-control and visibility based on role.

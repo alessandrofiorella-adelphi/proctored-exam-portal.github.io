@@ -163,7 +163,7 @@ h2, h3, .faculty-dashboard-header, .proctor-dashboard-header {
     flex: 1;
     background-color: #ffffff;
     padding: 20px;
-    border: 1px solid #c5bbb1; /* Light brown at 35% line framework */
+    border: 1px solid #c5bbb1;
     border-radius: 6px;
 }
 
@@ -204,7 +204,7 @@ h2, h3, .faculty-dashboard-header, .proctor-dashboard-header {
     flex-wrap: wrap;
     gap: 15px;
     padding: 14px;
-    justify-content: center;   /* Centers filter option rows together inline */
+    justify-content: center;  
     align-items: center;
     background-color: #f1efed;
 }
@@ -289,8 +289,8 @@ h2, h3, .faculty-dashboard-header, .proctor-dashboard-header {
 }
 
 .faculty-save-btn, .btn-action-proctor {
-    background-color: #4f2c1d; /* Primary Brown */
-    color: #ffffff;            /* White text */
+    background-color: #4f2c1d; 
+    color: #ffffff;            
     border: none;
     padding: 10px 16px;
     font-size: 14px;
@@ -389,15 +389,15 @@ h2, h3, .faculty-dashboard-header, .proctor-dashboard-header {
     border: 0;
 }
 
-/* ==========================================================================
-   Secure Portal Entrance Gateway Login Styling 
-   ========================================================================== */
+/*
+    Login
+*/
 .login-wrapper {
     width: 100%;
     max-width: 500px;
     margin: 40px auto;
     background-color: #ffffff;
-    border: 2px solid #4f2c1d; /* Adelphi Primary Brown */
+    border: 2px solid #4f2c1d; 
     border-radius: 8px;
     padding: 30px;
     box-shadow: 0 8px 16px rgba(79, 44, 29, 0.12);
@@ -412,7 +412,7 @@ h2, h3, .faculty-dashboard-header, .proctor-dashboard-header {
     left: 0;
     width: 100%;
     height: 6px;
-    background-color: #ffb500; /* Primary Gold top ribbon */
+    background-color: #ffb500; 
 }
 
 .login-wrapper h2 {
@@ -424,17 +424,16 @@ h2, h3, .faculty-dashboard-header, .proctor-dashboard-header {
 
 .login-instructions {
     font-size: 13px;
-    color: #4f4942; /* Dark Grey info text */
+    color: #4f4942;
     line-height: 1.5;
     margin-bottom: 20px;
     text-align: center;
     font-style: italic;
 }
 
-/* User Account Verification Guidebox */
 .credential-matrix-box {
-    background-color: #f1efed; /* Light Brown at 5% */
-    border: 1px solid #c5bbb1;  /* Light Brown at 35% */
+    background-color: #f1efed; 
+    border: 1px solid #c5bbb1; 
     padding: 12px;
     border-radius: 4px;
     margin: 18px 0;
@@ -480,13 +479,13 @@ h2, h3, .faculty-dashboard-header, .proctor-dashboard-header {
     box-shadow: 0 2px 4px rgba(0,0,0,0.05);
 }
 
-/* Log Out Header Action Alignment */
+/* Logout */
 .logout-link-btn {
     position: absolute;
     bottom: 15px;
     right: 20px;
     background-color: transparent;
-    color: #4f2c1d; /* Official Brown text */
+    color: #4f2c1d;
     border: 1px solid #4f2c1d;
     padding: 6px 12px;
     font-size: 12px;
@@ -502,7 +501,7 @@ h2, h3, .faculty-dashboard-header, .proctor-dashboard-header {
 }
 
 .logout-link-btn:focus {
-    outline: 2px solid #ffb500; /* Gold focus accent ring */
+    outline: 2px solid #ffb500; 
     outline-offset: 1px;
 }
 

@@ -21,6 +21,7 @@
     font-family: Arial, sans-serif;
     margin: 0;
     padding: 20px;
+    padding-top: 30px;
     display: flex;
     justify-content: center;   
     align-items: center;       
@@ -328,19 +329,19 @@ h2, h3, .faculty-dashboard-header, .proctor-dashboard-header {
 /* Each status has a different color. */
 .exam-card.status-approved { 
     border-left-color: #026e0d; 
-    border-color: #ffffff; 
+    border-color: #7a6855; 
 } 
 .exam-card.status-denied { 
     border-left-color: #8b0909; 
-    border-color: #ffffff; 
+    border-color: #7a6855; 
 }
 .exam-card.status-pending { 
     border-left-color: #ffb500; 
-    border-color: #ffffff; 
+    border-color: #7a6855; 
 }
 .exam-card.status-proctor-found { 
     border-left-color: #0d0ab1; 
-    border-color: #ffffff; 
+    border-color: #7a6855; 
 }
 /* Each badge has a different color. */
 .badge {

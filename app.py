@@ -1,24 +1,27 @@
-# ==========================================================================
-# File: app.py (Section 1: Imports & Database Bridge Configuration)
-# ==========================================================================
+#-------------------- Imports --------------------#
+# Paramiko and Flask are required for my front and back-ends to communicate with one another. 
 import paramiko
 if not hasattr(paramiko, 'DSSKey'):
     # Patches paramiko dynamically to handle sshtunnel lifecycle updates
     paramiko.DSSKey = paramiko.RSAKey
-
 from flask import Flask, render_template, request, redirect, url_for, session, jsonify
+# SSHTunnel and MySQL Connector are required to actually connect to the secure compsci.adelphi.edu server.
 from sshtunnel import SSHTunnelForwarder
 import mysql.connector
+# OS is required for use with Render.com and allows me to obscure my login information.
 import os
 
-# Points to your custom asset directories and templates folder location
+# Customizing the template folder (though it's not really necessary).
 app = Flask(__name__, static_url_path='', static_folder='.', template_folder='pages')
 app.secret_key = 'adelphi_secure_session_token_key'
 
+#-------------------- Database Connection --------------------#
 def get_db_connection():
     """Opens a secure SSH tunnel bridge and returns an active MySQL connection."""
     tunnel = SSHTunnelForwarder(
+        #Replace with your system's SSH server and port.
         ('compsci.adelphi.edu', 22),
+        #Replace with your system's SSH username and password if running locally, otherwise set these as environment variables on Render.com.
         ssh_username=os.environ.get("ssh_username"), 
         ssh_password=os.environ.get("ssh_password"),
         remote_bind_address=('127.0.0.1', 3306)
@@ -27,16 +30,20 @@ def get_db_connection():
     return mysql.connector.connect(
         host='127.0.0.1',
         port=tunnel.local_bind_port,
+        #Replace with your system's username and password if running locally, otherwise set these as environment variables on Render.com.
         user=os.environ.get("user"),
         password=os.environ.get("password"),
         database='ALESSANDROFIORELLA',
         autocommit=True
     )
 
-# ==========================================================================
-# File: app.py (Section 2: Security & Session Authentication Controllers)
-# ==========================================================================
+#--------------------App Routes --------------------#
+#========== Login Route ==========#
+# This route handles the "demo" login system for this application.
+# Note that in it's current form this system is not secure, nor is it meant to be.
+# The main dashboard of this application should be connected to your existing infrustructure's authentication system (ex: eCampus). 
 
+# To log into the application and view demo data, input any existing user's email address and the word "password". 
 @app.route('/', methods=['GET', 'POST'])
 def login_page():
     if request.method == 'POST':
@@ -50,7 +57,7 @@ def login_page():
             conn = get_db_connection()
             cursor = conn.cursor(dictionary=True)
 
-            # 1. Lookup user in your main user table directory
+            # Query the ExamUser table to find the user by their email.
             cursor.execute("SELECT * FROM ExamUser WHERE email = %s", (email_input,))
             user_record = cursor.fetchone()
 
@@ -59,7 +66,7 @@ def login_page():
                 conn.close()
                 return render_template('login.html', error="User email address not found.")
 
-            # 2. Query separate role authorization strings independently
+            # Check the roles that this user has.
             cursor.execute("""
                 SELECT ExamRole_idExamRole 
                 FROM ExamPossibleRoles 
@@ -69,7 +76,7 @@ def login_page():
             roles_fetched = cursor.fetchall()
             user_roles = [str(r['ExamRole_idExamRole']).strip().lower() for r in roles_fetched]
 
-            # 3. Formulate true/false visibility matrix tags
+            # Store the user's information and roles.
             session['user_id'] = user_record['idExamUser']
             session['first_name'] = user_record['firstName']
             session['last_name'] = user_record['lastName']
@@ -79,7 +86,7 @@ def login_page():
             session['has_faculty_role'] = 'faculty' in user_roles
             session['has_proctor_role'] = 'proctor' in user_roles
 
-            # Calculate composite role token identity
+            # We need to see if the user has muiltiple roles and assign them accordingly.
             simulated_role = "student"
             if session['has_student_role'] and session['has_faculty_role'] and session['has_proctor_role']:
                 simulated_role = "superuser"
@@ -101,15 +108,14 @@ def login_page():
 
     return render_template('login.html', error=None)
 
+#========== Logout Route ==========#
 @app.route('/logout')
 def logout_action():
-    session.clear() # Completely flushes cookies
+    session.clear() 
     return redirect(url_for('login_page'))
 
-# ==========================================================================
-# File: app.py (Section 3: Main Dashboard Relational Query Hub)
-# ==========================================================================
-
+#========== Dashboard Route ==========#
+# The main dashboard; a bulk of the actual application is in here.
 @app.route('/dashboard')
 def dashboard_page():
     if 'user_id' not in session:
@@ -119,7 +125,8 @@ def dashboard_page():
         conn = get_db_connection()
         cursor = conn.cursor(dictionary=True)
 
-        # A. Query ONLY active classes for this student where today's date matches running boundaries
+        #------ Student Courses -----#
+        # Pulling all currently running courses that the user is registered for as a student.
         cursor.execute("""
             SELECT ec.idExamCourse, ec.courseName, ec.meetingDays, ec.courseStart, ec.courseEnd, ec.meetingStart
             FROM ExamCourseRegistrant ecr
@@ -129,12 +136,13 @@ def dashboard_page():
         """, (session['user_id'], '2026-07-20'))
         active_student_courses = cursor.fetchall()
 
+        # Looping through all courses to format accordingly.
         for course in active_student_courses:
             course['courseStartStr'] = course['courseStart'].strftime('%Y-%m-%d') if course['courseStart'] else '2026-06-01'
             course['courseEndStr'] = course['courseEnd'].strftime('%Y-%m-%d') if course['courseEnd'] else '2026-08-30'
             course['meetingStart'] = str(course['meetingStart']) if course['meetingStart'] else '09:00:00'
 
-        # B. Query approved accommodation lookups this user possesses
+        # Checking all of their approved exam accommodations; in an actual system these would likely be stored in a seperate database entirely.
         cursor.execute("""
             SELECT opt.accommodationID, opt.accommodationName 
             FROM ExamAccommodationsApproved app
@@ -146,7 +154,7 @@ def dashboard_page():
         cursor.execute("SELECT accommodationID, accommodationName FROM ExamAccommodationOptions")
         opt_map = {str(row['accommodationID']): row['accommodationName'] for row in cursor.fetchall()}
 
-        # C. Query isolated student feed cards
+        #------ Student Exam Requests (for Students) -----#
         cursor.execute("""
             SELECT er.idExamRequest, er.requestedDate, er.requestedTime, er.actualDate, er.actualTime, 
                    er.actualLength, er.accommodations as raw_accomm_ids, er.timeExtension, er.comments, er.statusID,
@@ -159,7 +167,7 @@ def dashboard_page():
         """, (session['user_id'],))
         student_exams = cursor.fetchall()
 
-        # D. Query faculty feed tracking lines (Restricted to courses they teach)
+         #------ Exam Requests (for Faculty) -----#
         cursor.execute("""
             SELECT er.idExamRequest, er.requestedDate, er.requestedTime, er.actualDate, er.actualTime, 
                    er.actualLength, er.accommodations as raw_accomm_ids, er.timeExtension, er.comments, er.statusID,
@@ -174,7 +182,7 @@ def dashboard_page():
         """, (session['user_id'],))
         faculty_exams = cursor.fetchall()
 
-        # E. Query comprehensive Proctor dashboard market track
+         #------ Exam Requests (for Proctors) -----#
         cursor.execute("""
             SELECT 
                 er.idExamRequest, er.requestedDate, er.requestedTime,
@@ -182,7 +190,6 @@ def dashboard_page():
                 er.accommodations as raw_accomm_ids, er.timeExtension, er.comments, er.statusID,
                 ec.courseName, ec.idExamCourse, er.ExamRequestcol as testingLocation,
                 eu.firstName as studentFirstName, eu.lastName as studentLastName, eu.email as studentEmail,
-                -- FIXED: Added an explicit subquery string to fetch the user ID of the assigned proctor
                 (SELECT p_ed.detailUser FROM ExamDetails p_ed WHERE p_ed.detailExam = er.idExamRequest AND p_ed.detailRole = 'Proctor' LIMIT 1) as assignedProctorID,
                 (SELECT CONCAT(p_u.firstName, ' ', p_u.lastName) FROM ExamDetails p_ed JOIN ExamUser p_u ON p_ed.detailUser = p_u.idExamUser WHERE p_ed.detailExam = er.idExamRequest AND p_ed.detailRole = 'Proctor' LIMIT 1) as proctorName,
                 (SELECT p_u.email FROM ExamDetails p_ed JOIN ExamUser p_u ON p_ed.detailUser = p_u.idExamUser WHERE p_ed.detailExam = er.idExamRequest AND p_ed.detailRole = 'Proctor' LIMIT 1) as proctorEmail
@@ -194,7 +201,7 @@ def dashboard_page():
         proctor_exams = cursor.fetchall()
 
 
-        # Python Date parsing loops
+        # Formatting dates and times for readability.
         for dataset in [student_exams, faculty_exams, proctor_exams]:
             for exam in dataset:
                 raw_ids = exam.get('raw_accomm_ids')
@@ -212,7 +219,7 @@ def dashboard_page():
         cursor.close()
         conn.close()
 
-                # File: app.py - Update the return line at the bottom of /dashboard route
+        # Render the dashboard template with all the data that's been fetched and formatted.
         return render_template('dashboard.html', 
                                student_exams=student_exams, 
                                faculty_exams=faculty_exams, 
@@ -226,19 +233,21 @@ def dashboard_page():
                                first_name=session.get('first_name'), 
                                last_name=session.get('last_name'), 
                                email=session.get('email'),
-                               # FIXED: Passes the logged-in user integer ID down to the HTML frontend template
                                current_user_id=session.get('user_id'))
 
+    # Just in case!
     except Exception as e:
         return f"Dashboard Fetch Failure: {str(e)}", 500
 
-# ==========================================================================
-# File: app.py (Section 4: Data Entry Form Submission & Update Action Handlers)
-# ==========================================================================
 
-@app.route('/submit-registration', methods=['POST'])
+#========== Exam Request Form Route (Student Tab) ==========#
+@app.route('/submit-request', methods=['POST'])
 def submit_registration():
-    if 'user_id' not in session: return redirect(url_for('login_page'))
+    # Make sure we're logged in and ready.
+    if 'user_id' not in session: 
+        return redirect(url_for('login_page'))
+
+    # Grab all of the input data from the form submission.
     course_id = request.form.get('selected_course_id')
     exam_date = request.form.get('start_date')
     accomm_id_list = request.form.getlist('selected_accomm_ids[]')
@@ -247,10 +256,12 @@ def submit_registration():
     conn = get_db_connection()
     cursor = conn.cursor(dictionary=True)
     try:
+        # All exams are set to start at the same time as the rest of class; instructors can change this later if they want to.
         cursor.execute("SELECT meetingStart FROM ExamCourse WHERE idExamCourse = %s", (course_id,))
         course_data = cursor.fetchone()
         course_start_time = str(course_data['meetingStart']) if (course_data and course_data['meetingStart']) else "09:00:00"
 
+        # Push to the database.
         cursor.execute("""
             INSERT INTO ExamRequest (statusID, courseID, ExamRequestcol, requestedDate, requestedTime, actualDate, actualTime, actualLength, accommodations, timeExtension, comments)
             VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
@@ -260,15 +271,19 @@ def submit_registration():
         cursor.execute("INSERT INTO ExamDetails (detailUser, detailRole, detailExam) VALUES (%s, 'Student', %s)", (session['user_id'], new_request_id))
         cursor.close(); conn.close()
         return redirect(url_for('dashboard_page'))
+
+    # Just in case!
     except Exception as e:
         return f"Entry Failure: {str(e)}", 500
 
-# --- ROUTE 4: FACULTY ACTION CONTROLLER (UPDATED FOR DENY & CANCEL LIFECYCLES) ---
+#========== Exam Request Update Route (Faculty Tab)==========#
 @app.route('/faculty/update-request', methods=['POST'])
 def faculty_update_request():
+    # Make sure we're logged in and ready.
     if 'user_id' not in session: 
         return redirect(url_for('login_page'))
-        
+
+    # Grab all of the input data that user has potentially changed about the request.
     request_id = request.form.get('request_id')
     assigned_date = request.form.get('assigned_exam_date')
     action_type = request.form.get('action_type')
@@ -277,14 +292,14 @@ def faculty_update_request():
     conn = get_db_connection()
     cursor = conn.cursor(dictionary=True)
     try:
-        # Fetch current request metadata for accommodation verification loops
+        # Handling time-extension; this is more of a "proof of concept", and parties interested in full-integration will need to contend with other potential extension amounhts.
         cursor.execute("SELECT accommodations, requestedTime FROM ExamRequest WHERE idExamRequest = %s", (request_id,))
         exam_row = cursor.fetchone()
         
         final_length = int(base_length * 1.5) if (exam_row and exam_row['accommodations'] and '1' in exam_row['accommodations'].split()) else base_length
         time_diff = final_length - base_length
 
-        # FIXED ROUTING MATRIX: Maps your new button actions directly to your updated status table constraints
+        # Approving a request confirms the details and makes it available for proctors.
         if action_type == 'approve_request':
             new_status = 'Approved By Faculty (Initial)'
             cursor.execute("""
@@ -292,22 +307,25 @@ def faculty_update_request():
                 SET actualDate = %s, actualTime = %s, actualLength = %s, timeExtension = %s, statusID = %s 
                 WHERE idExamRequest = %s
             """, (assigned_date, exam_row['requestedTime'], final_length, time_diff, new_status, request_id))
-            
+
+        # Approving a proctor confirms the exam is happening.            
         elif action_type == 'approve_proctor':
             new_status = 'Approved By Faculty (Final)'
             cursor.execute("UPDATE ExamRequest SET statusID = %s WHERE idExamRequest = %s", (new_status, request_id))
-            
+
+        # Denying a request prevents it from being scheduled and removes it from the active pool.
+        #  Denied requests are ones that were never planned or approved.
         elif action_type == 'deny_request':
-            # FIXED: New action handler for denying newly submitted requests
             new_status = 'Denied'
             cursor.execute("UPDATE ExamRequest SET statusID = %s WHERE idExamRequest = %s", (new_status, request_id))
-            
+
+        # Canceling a request prevents it from being scheduled and removes it from the active pool.
+        #  Canceled requests are ones that *were* planned/approved and then canceled (for whatever reason outside of the form).
         elif action_type == 'cancel_request':
-            # FIXED: New action handler for canceling already approved active requests
             new_status = 'Canceled'
-            # Wipes proctor testing location data out alongside status transitions
             cursor.execute("UPDATE ExamRequest SET statusID = %s, ExamRequestcol = 'Canceled' WHERE idExamRequest = %s", (new_status, request_id))
-            
+
+        # Under review just means that a request has not been approved or denied yet.
         else:
             new_status = 'Under Review'
             cursor.execute("UPDATE ExamRequest SET statusID = %s WHERE idExamRequest = %s", (new_status, request_id))
@@ -320,10 +338,14 @@ def faculty_update_request():
         if 'conn' in locals(): conn.close()
         return f"Faculty Workflow Processing Error: {str(e)}", 500
 
-
+#========== Exam Request Claim Route (Proctor Tab)==========#
 @app.route('/proctor/claim-request', methods=['POST'])
 def proctor_claim_request():
-    if 'user_id' not in session: return redirect(url_for('login_page'))
+    # Make sure we're logged in and ready.
+    if 'user_id' not in session: 
+        return redirect(url_for('login_page'))
+    
+    # Claiming a request puts your name on it (as the proctor), pulling it from the pool.
     request_id, location_room = request.form.get('request_id'), request.form.get('proctor_location')
     conn = get_db_connection(); cursor = conn.cursor()
     cursor.execute("UPDATE ExamRequest SET statusID = 'Approved By Proctor', ExamRequestcol = %s WHERE idExamRequest = %s", (location_room, request_id))
@@ -331,7 +353,9 @@ def proctor_claim_request():
     cursor.close(); conn.close()
     return redirect(url_for('dashboard_page'))
 
-# --- ROUTE 6: PROCTOR DROP CONTROLLER (UPDATED FOR ANYTIME LIFE-CYCLE Pool RESET) ---
+#========== Exam Request Drop Route (Proctor Tab)==========#
+# Proctors may need to "drop" a request in the event that something comes up.
+# Dropped requests need to be handled so that they can be picked-up by someone else.
 @app.route('/proctor/drop-request', methods=['POST'])
 def proctor_drop_request():
     if 'user_id' not in session: 
@@ -343,8 +367,7 @@ def proctor_drop_request():
     cursor = conn.cursor()
 
     try:
-        # 1. FIXED STATUS CODE: Resets the request row back to the exact initial faculty approval state
-        # and forcefully wipes out the room assignment string data to allow re-entry
+        # Reverts the request back to a "claimable" state (removes location & proctor).
         cursor.execute("""
             UPDATE ExamRequest 
             SET statusID = 'Approved By Faculty (Initial)',
@@ -352,7 +375,6 @@ def proctor_drop_request():
             WHERE idExamRequest = %s
         """, (request_id,))
 
-        # 2. Deletes the active proctor relationship row mapping from the junction table
         cursor.execute("""
             DELETE FROM ExamDetails 
             WHERE detailUser = %s 
@@ -363,14 +385,14 @@ def proctor_drop_request():
         cursor.close()
         conn.close()
         return redirect(url_for('dashboard_page'))
-        
+
+    # Just in case!
     except Exception as e:
         if 'cursor' in locals(): cursor.close()
         if 'conn' in locals(): conn.close()
         return f"Proctor Resignation Processing Failure: {str(e)}", 500
 
+#---------- Main Application Runner ----------#
 if __name__ == '__main__':
-    # This is required for Render.
-    import os
     port = int(os.environ.get("PORT", 5000))
     app.run(host="0.0.0.0", port=port, debug=True)

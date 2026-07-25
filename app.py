@@ -1,3 +1,8 @@
+##
+# This Python file allows us to connect between our front-end (HTML/CSS/JS) and our back-end (MySQL database) through a secure SSH tunnel.
+# All queries to and from the database are handled here thanks to Flask, Paramiko, SSHTunnel, and MySQL Connector.
+##
+
 #-------------------- Imports --------------------#
 # Paramiko and Flask are required for my front and back-ends to communicate with one another. 
 import paramiko

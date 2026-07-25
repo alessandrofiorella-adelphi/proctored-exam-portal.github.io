@@ -1,29 +1,36 @@
+<!-- 
+    NOTE: This is a demo-login page used to demonstrate the different user roles and how they interact.
+    When adding into an existing system, this functionality would be replaced by the existing authentication scheme
+    (EX: if Adelphi adopted this application login would be handled through eCampus integration). 
+-->
+
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Autentication</title>
+    <title>Authentication</title>
     <link rel="stylesheet" href="../static/style.css">
-    <script src="../js/loginfunction.js"></script>
-<body>
+</head>
 
-    <!-- Main Application Header Bar -->
+<body>
+    <!-------------------- Title Header -------------------->
     <header class="app-header">
         <div class="header-logo-accent"></div>
         <h1>Adelphi University Proctored Exam Portal</h1>
     </header>
 
-    <!-- Role-Based Mock Login Card -->
+    <!-------------------- Login Form -------------------->
     <div class="login-wrapper">
         <div class="login-accent-bar"></div>
         <h2>User Login</h2>
-        <p class="login-instructions">This functionality would usually be handled elsewhere if this portal was connected to eCampus or Adelphi intranet. This functionality has been replicated here to allow for different users/views.</p>
+        <p class="login-instructions">This functionality would usually be handled elsewhere if this portal was connected to eCampus or Adelphi intranet. 
+            This functionality has been replicated here to allow for different users/views.</p>
         
         <form id="mockLoginForm" action="/" method="POST">
             <div class="form-group">
                 <label for="loginUser">University Email Address</label>
-                <!-- Crucial: name="username" lets Flask grab the string field input value -->
                 <input type="text" id="loginUser" name="username" placeholder="e.g., johndoe@mail.edu" required autocomplete="username">
             </div>
             
@@ -34,7 +41,7 @@
 
             <button type="submit" class="form-submit-btn login-btn">Login</button>
             
-            <!-- Jinja block dynamically prints validation warnings straight from Python -->
+            <!-- Prints error message from app.py -->
             {% if error %}
                 <p class="login-error">{{ error }}</p>
             {% endif %}

@@ -68,24 +68,6 @@ function activateTab(targetTab) {
     if (targetPanel) targetPanel.setAttribute('aria-hidden', 'false');
 }
 
-/* 
-    Prevents users from selecting a date that doesn't match the course's meeting days. If the user selects an invalid date, it reset
-*/
-function applyMeetingDaysClamping() {
-    const courseDropdown = document.getElementById('courseSelect');
-    const datePicker = document.getElementById('startDate');
-    const warningText = document.getElementById('dateWarningMessage');
-    
-    const selectedOption = courseDropdown.options[courseDropdown.selectedIndex];
-    if (!selectedOption || courseDropdown.value === "") return;
-
-    datePicker.disabled = false;
-    datePicker.min = selectedOption.getAttribute('data-start');
-    datePicker.max = selectedOption.getAttribute('data-end');
-    datePicker.value = "";
-    warningText.classList.add('hidden');
-}
-
 function enforceMeetingDaySelection(inputField) {
     const chosenDateValue = inputField.value;
     if (!chosenDateValue) return;

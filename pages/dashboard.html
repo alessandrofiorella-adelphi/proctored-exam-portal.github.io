@@ -88,8 +88,7 @@
                         <!-- Students can only select the days that their courses meet; this seems to be standard among other similar applications/processes. -->
                         <div class="form-group">
                             <label for="startDate">Date of Exam</label>
-                            <input type="date" id="startDate" name="start_date" oninput="enforceMeetingDaySelection(this)" onchange="enforceMeetingDaySelection(this)" required disabled>
-                            <!-- Warns students that try to select dates that their class does not meet. -->
+                            <input type="date" id="startDate" name="start_date">
                             <p id="dateWarningMessage" class="hidden"></p>
                         </div>
 

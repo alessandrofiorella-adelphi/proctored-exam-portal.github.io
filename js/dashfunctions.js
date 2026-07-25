@@ -53,6 +53,9 @@ function setupAccessibleTabs() {
     });
 }
 
+window.addEventListener('DOMContentLoaded', checkSecureSessionAuthentication);
+
+
 /* 
     "Activates" a tab and updates its accessibility attributes.
 */
@@ -68,48 +71,29 @@ function activateTab(targetTab) {
     if (targetPanel) targetPanel.setAttribute('aria-hidden', 'false');
 }
 
-function enforceMeetingDaySelection(inputField) {
-    const chosenDateValue = inputField.value;
-    if (!chosenDateValue) return;
-
-    const allowedDaysToken = document.getElementById('courseSelect').selectedOptions[0].getAttribute('data-days');
-    const warningText = document.getElementById('dateWarningMessage');
-    const submitBtn = document.getElementById('submitFormBtn');
-
-    const weekdayNumericIndex = new Date(chosenDateValue + 'T00:00:00').getDay();
-    const mappedLetterToken = ['U', 'M', 'T', 'W', 'R', 'F', 'S'][weekdayNumericIndex];
-
-    if (allowedDaysToken.indexOf(mappedLetterToken) === -1) {
-        inputField.value = ""; 
-        inputField.style.border = "2px solid #bd2130"; 
-        warningText.textContent = `❌ Reset: Course meets only on (${allowedDaysToken}). Invalid day cleared.`;
-        warningText.classList.remove('hidden');
-        submitBtn.disabled = true;
-    } else {
-        inputField.style.border = "1px solid #7a6855"; 
-        warningText.classList.add('hidden');
-        submitBtn.disabled = false;
-    }
-}
-
-window.addEventListener('DOMContentLoaded', checkSecureSessionAuthentication);
-
+/*
+    Logout redirect.
+*/
 function executeLogOut() {
-    // FIXED: Directly drops the local session memory and routes back to the Flask exit gateway
     window.location.href = '/logout';       
 }
 
+/* 
+    Handles the toggle for date-type (submission date vs request date) filtering.
+*/
 function handleDateTypeToggle(userType, feedType) {
     processTabFiltering(userType, feedType);
 }
 
+/* 
+    Resets all filters in the tab and re-displays all items (the default).
+*/
 function resetTabFilters(userType, feedType) {
     let prefix = 'st';
     if (userType === 'faculty') prefix = 'fa';
     if (userType === 'proctorOpen') prefix = 'prOpen';
     if (userType === 'proctorAgreed') prefix = 'prAgreed';
 
-    // Clear dates and dropdowns
     const startInput = document.getElementById(`${prefix}Start`);
     if (startInput) startInput.value = '';
     
@@ -119,33 +103,30 @@ function resetTabFilters(userType, feedType) {
     const sortInput = document.getElementById(`${prefix}Sort`);
     if (sortInput) sortInput.value = 'desc';
 
-    // Reset radio buttons to 'submission'
     const defaultRadio = document.querySelector(`input[name="${prefix}DateType"][value="submission"]`);
     if (defaultRadio) defaultRadio.checked = true;
 
-    // Reset faculty course dropdown if it exists
     const courseSelect = document.getElementById('faCourse');
     if (courseSelect && userType === 'faculty') courseSelect.value = 'ALL';
 
-    // Run the filter engine to restore all items instantly
     processTabFiltering(userType, feedType);
 }
 
+/* 
+    Processes the filtering and sorting based on user input.
+*/
 function processTabFiltering(userType, feedType) {
     const container = document.getElementById(feedType);
     if (!container) return;
 
-    // Grab all target child cards within this specific feed container
     const items = Array.from(container.querySelectorAll('.exam-card'));
     if (items.length === 0) return;
 
-    // 1. Map the parameter scope context prefixes cleanly
     let prefix = 'st';
     if (userType === 'faculty') prefix = 'fa';
     if (userType === 'proctorOpen') prefix = 'prOpen';
     if (userType === 'proctorAgreed') prefix = 'prAgreed';
 
-    // 2. Safely extract interactive input field values
     const dateTypeInput = document.querySelector(`input[name="${prefix}DateType"]:checked`);
     const dateType = dateTypeInput ? dateTypeInput.value : 'submission';
     
@@ -157,15 +138,12 @@ function processTabFiltering(userType, feedType) {
     const endDateVal = endDateElement ? endDateElement.value : '';
     const sortOrder = sortElement ? sortElement.value : 'desc';
 
-    // Faculty drop-down filter parsing metric
     const courseSelect = document.getElementById('faCourse');
     const selectedCourse = courseSelect ? courseSelect.value : 'ALL';
 
-    // 3. Convert input strings to numeric timestamps (null if left blank)
     const filterStart = startDateVal ? new Date(startDateVal + "T00:00:00").getTime() : null;
     const filterEnd = endDateVal ? new Date(endDateVal + "T23:59:59").getTime() : null;
 
-    // 4. Map and evaluate each item's visibility status
     const itemsWithDates = items.map(item => {
         const rawSubDate = item.getAttribute('data-submission-date');
         const rawExamDate = item.getAttribute('data-exam-date');
@@ -174,32 +152,27 @@ function processTabFiltering(userType, feedType) {
         const subTime = rawSubDate ? new Date(rawSubDate + "T00:00:00").getTime() : 0;
         const examTime = rawExamDate ? new Date(rawExamDate + "T00:00:00").getTime() : 0;
         
-        // Pick which date timeline to use based on the radio button choice
         const activeTime = (dateType === 'submission') ? subTime : examTime;
 
         let isVisible = true;
 
-        // FIXED: Boundary conditions only trip if the user filled out that specific date input
+        // Makes it so that you don't need a date range to filter.
         if (filterStart && activeTime < filterStart) isVisible = false;
         if (filterEnd && activeTime > filterEnd) isVisible = false;
 
-        // Faculty Course tracking evaluation check
         if (selectedCourse !== 'ALL' && itemCourse && itemCourse !== selectedCourse) {
             isVisible = false;
         }
 
-        // Toggle card layout visibility without wiping out DOM element records
         item.style.display = isVisible ? '' : 'none';
         
         return { element: item, time: activeTime };
     });
 
-    // 5. Run the mathematical layout sorting logic
     itemsWithDates.sort((a, b) => {
         return (sortOrder === 'desc') ? b.time - a.time : a.time - b.time;
     });
 
-    // 6. Re-append nodes back into the DOM to instantly update screen sequence order
     itemsWithDates.forEach(itemObj => {
         container.appendChild(itemObj.element);
     });

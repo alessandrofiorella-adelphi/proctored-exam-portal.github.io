@@ -1,8 +1,17 @@
-// ==========================================================================
-// File: js/filters.js (Complete Frontend Navigation & Calendar Framework)
-// ==========================================================================
+/*
+    This file contains all Javascript functions for the dashboard, handling tab visibility, data valitation, filtering, and more.
+    This file is required for a lot of the "flashy" functionality included in this form, so theoretically much of this is not strictly necessary
+    for the minimum desired functionality. It does, however, do a lot to improve the user experience.
+
+    Functions are organized in no particular order.
+*/
+
+// Important for tab-control and visibility based on role.
 let tabVisibilityCriteria = { 'tab1': false, 'tab2': false, 'tab3': false };
 
+/* 
+    Checks the user's role and sets the visibility of each tab accordingly.
+*/
 function checkSecureSessionAuthentication() {
     const roleContainer = document.querySelector('.tab-buttons');
     tabVisibilityCriteria = { 'tab1': false, 'tab2': false, 'tab3': false };
@@ -19,6 +28,9 @@ function checkSecureSessionAuthentication() {
     setupAccessibleTabs();
 }
 
+/* 
+    Enables/disables the tabs based on the user's role and sets up tab-switching functionality.
+*/
 function setupAccessibleTabs() {
     const tabs = document.querySelectorAll('.tab-btn');
     let firstVisibleTabBtn = null;
@@ -41,6 +53,9 @@ function setupAccessibleTabs() {
     });
 }
 
+/* 
+    "Activates" a tab and updates its accessibility attributes.
+*/
 function activateTab(targetTab) {
     const tabContainer = targetTab.closest('.tab-container');
     tabContainer.querySelectorAll('.tab-btn').forEach(btn => {
@@ -53,6 +68,9 @@ function activateTab(targetTab) {
     if (targetPanel) targetPanel.setAttribute('aria-hidden', 'false');
 }
 
+/* 
+    Prevents users from selecting a date that doesn't match the course's meeting days. If the user selects an invalid date, it reset
+*/
 function applyMeetingDaysClamping() {
     const courseDropdown = document.getElementById('courseSelect');
     const datePicker = document.getElementById('startDate');

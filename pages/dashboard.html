@@ -15,18 +15,18 @@
     <script src="../js/dashfunctions.js"></script>
 </head>
 
-<!-------------------- Login Form -------------------->
+<!-------------------- Title Header -------------------->
 <header class="app-header">
     <div class="header-logo-accent"></div>
     <h1>Adelphi University Proctored Exam Portal</h1>
     
+    <!-- The currently logged-in user's information is displayed up top for ease of use. -->
     <div class="header-user-profile-badge">
         Active User: {{ first_name }} {{ last_name }}
         &nbsp;|&nbsp; ID: #{{ current_user_id }} 
         &nbsp;|&nbsp; Email: {{ email }}
     </div>
     
-    <!-- Log Out button element link endpoint -->
     <button onclick="window.location.href='/logout'" class="logout-link-btn" aria-label="Log out of secure portal session">Log Out</button>
 </header>
 
@@ -44,17 +44,17 @@
         </div>
 
 
-<!-- ==================== Student Tab ==================== -->
+<!-------------------- Student Tab -------------------->
         <div id="tab1" class="tab-content" role="tabpanel" aria-labelledby="btn-tab1" aria-hidden="false">
             <h2 class="sr-only">Student Dashboard</h2>
             <div class="tab-columns-wrapper">
                 
-                <!-- Proctored Exam Request Form -->
+                <!--========== Proctored Exam Request Form ==========-->
                 <div class="tab-column">
                     <h3>Request to Proctor</h3>
                     <form action="/submit-request" method="POST" id="examRequestForm">
                         
-                        <!-- The following three fields are autofilled and immutable for convenience -->
+                        <!-- The following three fields are autofilled and cannot be changed for convenience & accuracy. -->
                         <div class="form-group">
                             <label for="firstName">First Name</label>
                             <input type="text" id="firstName" name="first_name" value="{{ first_name }}" readonly>
@@ -85,7 +85,7 @@
                             </select>
                         </div>
 
-                        <!-- Students can only select the days that their courses meet; this seems to be standard -->
+                        <!-- Students can only select the days that their courses meet; this seems to be standard among other similar applications/processes. -->
                         <div class="form-group">
                             <label for="startDate">Date of Exam</label>
                             <input type="date" id="startDate" name="start_date" oninput="enforceMeetingDaySelection(this)" onchange="enforceMeetingDaySelection(this)" required disabled>
@@ -93,13 +93,13 @@
                             <p id="dateWarningMessage" class="hidden"></p>
                         </div>
 
+                        <!-- Student accommodations are selectable in here -->
                         <fieldset class="accessible-fieldset">
                             <h5>Exam Accommodations</h2>
                             <p class="sub-description">Please only select the approved accommodations you would like to use on this exam.</p>    
                             <div class="checkbox-group">
                                 {% for option in approved_accomm_options %}
                                     <label class="checkbox-label">
-                                        <!-- Value attribute tracks the raw ID string to save as a delimiter text block -->
                                         <input type="checkbox" name="selected_accomm_ids[]" value="{{ option.accommodationID }}">
                                         <span>{{ option.accommodationName }}</span>
                                     </label>
@@ -113,11 +113,13 @@
                     </form>
                 </div>
 
-                <!-- Previous Requests Column -->
+                <!--========== Submitted Requests ==========-->
                 <div class="tab-column">
                     <h3>Previous Requests</h3>
                     
-                    <!-- Filter [NOT WORKING] -->
+                    <!-- Dropdown filters to allow for easier navigation. -->
+                    <!--There are a limited number of criteria for filtering; this could be expanded in the future to include options like "Request Status"
+                        or to allow for filtering based off of semester/year. -->
                     <details class="filter-dropdown-wrapper" id="stFilterDropdown">
                         <summary class="filter-dropdown-trigger">Filter & Sort</summary>
                         <div class="global-filter-bar">
@@ -150,7 +152,8 @@
                             </div>
                         </div>
                     </details>
-
+                    
+                    <!-- Displays all previously submitted exam requests from this specific student. -->
                     <div class="exam-feed-scroll" id="examFeed">
                         {% for exam in student_exams %}
                         <div class="exam-card status-{{ exam.statusID|lower|replace(' ', '-') }}" data-submission-date="{{ exam.sub_date }}" data-exam-date="{{ exam.pref_date }}">
@@ -174,18 +177,18 @@
 
             </div>
         </div>
-<!-- =================================================================== -->
+<!-------------------- End of Student Tab -------------------->
 
-<!-- ==================== Faculty Tab ==================== -->
+<!-------------------- Faculty Tab -------------------->
         <div id="tab2" class="tab-content" role="tabpanel" aria-labelledby="btn-tab2" aria-hidden="true">
             <h2 class="sr-only">Faculty Dashboard</h2>
             <h3>Proctored Exam Requests for Courses Instructed</h3>
-            
-            <!-- Filter Dropdown [STILL BROKEN] -->
+            <!-- Dropdown filters to allow for easier navigation. -->            
             <details class="filter-dropdown-wrapper" id="faFilterDropdown">
                 <summary class="filter-dropdown-trigger">Filter & Sort</summary>
                 <div class="global-filter-bar">
-                    <!-- Course dropdown (Extracts unique courses from faculty_exams) -->
+                    
+                    <!-- Faculty can filter by courses that they *instruct* -->
                     <div class="filter-row toggle-row">
                         <label for="faCourse">Course:</label>
                         <select id="faCourse" onchange="processTabFiltering('faculty', 'facultyRequestsFeed')">
@@ -225,8 +228,8 @@
                 </div>
             </details>
 
+            <!-- Displays all exam requests for the courses the faculty member instructs. -->
             <div class="faculty-requests-container" id="facultyRequestsFeed">
-                <!-- Restricts displayed course requests to what courses the user teaches. -->
                 {% for exam in faculty_exams %}
                 <div class="exam-card faculty-card status-{{ exam.statusID|lower|replace(' ', '-') }}" data-course="{{ exam.idExamCourse }}" data-submission-date="{{ exam.sub_date }}" data-exam-date="{{ exam.pref_date }}">
                     <form action="/faculty/update-request" method="POST">
@@ -243,7 +246,7 @@
                             <div class="meta-field"><strong>Accommodations:</strong> <span>{{ exam.accommodations or 'None' }}</span></div>
                             <div class="meta-field"><strong>Proctor Email:</strong> <span>{{ exam.proctorEmail or 'N/A' }}</span></div>
                             
-                            <!-- Allows faculty to input exam length and to update exam date in case student requests incorrectly. -->
+                            <!-- Allows faculty to input exam length and to update exam date if needed. -->
                             {% if exam.statusID == 'Requested' %}
                                 <div class="faculty-control-group">
                                     <label for="editDate-{{ exam.idExamRequest }}">Modify Exam Date:</label>
@@ -259,7 +262,7 @@
                             {% endif %}
                         </div>
                         
-                        <!-- Changes how faculty can interact based on the status of the request. -->
+                        <!-- Faculty will have access to different actions based on the current status of the request. -->
                         <div class="faculty-card-actions">
                             <!-- When originally requested... -->
                             {% if exam.statusID == 'Requested' %}
@@ -287,19 +290,20 @@
                 {% endfor %}
             </div>
         </div>
-<!-- =================================================================== -->
+<!-------------------- End of Faculty Tab -------------------->
 
-<!-- ==================== Proctor Tab ==================== -->
+<!-------------------- Proctor Tab -------------------->
         <div id="tab3" class="tab-content" role="tabpanel" aria-labelledby="btn-tab3" aria-hidden="true">
             <h2 class="sr-only">Proctor Portal</h2>
             <h3>Exams In-Need of Proctoring</h3>
 
             <div class="tab-columns-wrapper">
-                <!-- Available Exams -->
+                <!--========== Requests In Need of a Proctor ==========-->
                 <div class="tab-column proctor-column">
                     <h3>Open Requests</h3>
                     
-                      <details class="filter-dropdown-wrapper" id="prOpenFilterDropdown">
+                    <!-- Dropdown filters to allow for easier navigation. -->
+                    <details class="filter-dropdown-wrapper" id="prOpenFilterDropdown">
                         <summary class="filter-dropdown-trigger">Filter & Sort</summary>
                         <div class="global-filter-bar column-filter-bar">
                             <div class="filter-row toggle-row">
@@ -323,6 +327,8 @@
                             </div>
                         </div>
                     </details>
+                    
+                    <!-- Displays all exam requests that have been approved by faculty (initially) but that do not have a proctor. -->
                     <div class="proctor-feed-scroll" id="openProctorFeed">
                         {% for exam in proctor_exams if exam.statusID == 'Approved By Faculty (Initial)' %}
                         <div class="exam-card status-{{ exam.statusID|lower|replace(' ', '-') }}" data-submission-date="{{ exam.sub_date }}" data-exam-date="{{ exam.pref_date }}">
@@ -341,6 +347,7 @@
                                         <input type="text" id="claimLocation-{{ exam.idExamRequest }}" name="proctor_location" placeholder="e.g., Hagedorn Room 112" required>
                                     </div>
                                 </div>
+                                <!-- Proctors can "claim" a request. -->
                                 <div class="proctor-card-actions">
                                     <button type="submit" class="proctor-btn btn-claim">Accept & Agree to Proctor</button>
                                 </div>
@@ -351,10 +358,12 @@
                         {% endfor %}
                     </div>
                 </div>
-                <!-- Exams agreed to proctor -->
+                
+                <!--========== Requests Agreed to Proctor ==========-->
                 <div class="tab-column proctor-column">
                     <h3>Your Agreed Exams</h3>
-                    
+
+                    <!-- Dropdown filters to allow for easier navigation. -->
                     <details class="filter-dropdown-wrapper" id="prAgreedFilterDropdown">
                         <summary class="filter-dropdown-trigger">Filter & Sort</summary>
                         <div class="global-filter-bar column-filter-bar">
@@ -380,9 +389,9 @@
                         </div>
                     </details>
 
+                    <!-- Displays all exam requests that the user has agreed to proctor. -->
                     <div class="proctor-feed-scroll" id="agreedProctorFeed">
-                        
-                        <!-- Confirms that the exam is being proctored by the current user -->
+                        <!-- Checking to ensure the displayed exams are only ones that the user is proctoring. -->
                         {% for exam in proctor_exams if exam.statusID in ['Approved By Proctor', 'Approved By Faculty (Final)'] and exam.assignedProctorID == current_user_id %}
                         <div class="exam-card status-{{ 'approved' if exam.statusID == 'Approved By Faculty (Final)' else 'proctor-found' }}" data-submission-date="{{ exam.sub_date }}" data-exam-date="{{ exam.pref_date }}">
                             <form action="/proctor/drop-request" method="POST">
@@ -413,7 +422,7 @@
 
             </div>
         </div>
-<!-- =================================================================== -->
+<!-------------------- End of Proctor Tab -------------------->
     </div>
 </body>
 </html>
